@@ -15,7 +15,7 @@ def bounding_box(mask_image):
     # Find contours
     contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    print(f"total number of rooftops in the image is : {len(contours)}")
+    # print(f"total number of rooftops in the image is : {len(contours)}")
 
     # List to store bounding boxes
     bounding_boxes = []
@@ -23,7 +23,7 @@ def bounding_box(mask_image):
     # Loop through contours and get bounding boxes
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        bounding_boxes.append((x, y, w, h))
+        bounding_boxes.append((x, y, x+w, y+h))
 
     return bounding_boxes
 
