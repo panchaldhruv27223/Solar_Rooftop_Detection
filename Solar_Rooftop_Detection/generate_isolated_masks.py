@@ -6,7 +6,7 @@ def generate_isolated_mask(mask, box):
     output = "Isolated mask.
     """
     x1, y1, x2, y2 = box
-    print(x1, y1, x2, y2)
+    # print(x1, y1, x2, y2)
 
     isloated_mask = torch.zeros_like(mask)
     
