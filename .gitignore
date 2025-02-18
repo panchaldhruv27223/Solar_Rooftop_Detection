@@ -17,6 +17,7 @@ logs/
 
 ## Model Weights
 *.pth
+*.zip
 
 # Distribution / packaging
 .Python
