@@ -7,3 +7,7 @@ tifffile
 matplotlib
 scipy
 torchvision
+ipykernel
+notebook
+git+https://github.com/facebookresearch/segment-anything.git
+monai

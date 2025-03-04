@@ -8,6 +8,7 @@ __pycache__/
 
 ## Data directory 
 Arial_images_1024_1024/
+Arial_test_images
 
 ## Model Directory
 checkpoints/Final_Models
@@ -18,6 +19,12 @@ logs/
 ## Model Weights
 *.pth
 *.zip
+
+## .ipynb
+test.ipynb
+trail.ipynb
+demo.py
+
 
 # Distribution / packaging
 .Python
@@ -77,9 +84,6 @@ db.sqlite3-journal
 # Flask stuff:
 instance/
 .webassets-cache
-
-## .ipynb
-trial.ipynb
 
 # Scrapy stuff:
 .scrapy

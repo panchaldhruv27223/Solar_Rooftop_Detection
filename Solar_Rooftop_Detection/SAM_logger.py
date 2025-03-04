@@ -17,7 +17,6 @@ logging.basicConfig(
     datefmt="%d-%b-%Y %H:%M:%S",
     handlers= [
         logging.FileHandler(log_file_path, mode="w"), ## Create log file for each run
-        logging.StreamHandler()  ## Print log to console
     ]
 )
 
