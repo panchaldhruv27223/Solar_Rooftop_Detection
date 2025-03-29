@@ -14,6 +14,8 @@ Arial_validation_images/
 /Solar_Rooftop_Detection/Validation_results
 Solar_rooftop_Detection_indian_images/Demo_images/
 
+Solar_Rooftop_Detection/BaseLineModels/Unet_model/unet_rooftop_50.pth
+
 ## Model Directory
 checkpoints/Final_Models
 

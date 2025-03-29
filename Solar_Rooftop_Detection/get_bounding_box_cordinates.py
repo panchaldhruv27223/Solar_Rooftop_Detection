@@ -4,6 +4,13 @@ import numpy
 
 
 def bounding_box(mask_image):
+    
+    # # Convert the input mask to grayscale (if it has 4 channels or is in color)
+    # if len(input_mask.shape) == 3 and input_mask.shape[2] == 4:
+    #     input_mask = cv2.cvtColor(input_mask, cv2.COLOR_RGBA2GRAY)  # If it's RGBA
+    # elif len(input_mask.shape) == 3 and input_mask.shape[2] == 3:
+    #     input_mask = cv2.cvtColor(input_mask, cv2.COLOR_BGR2GRAY)  # If it's RGB
+
     # Ensure the mask is binary
     _, binary_mask = cv2.threshold(mask_image, 128, 255, cv2.THRESH_BINARY)
     
