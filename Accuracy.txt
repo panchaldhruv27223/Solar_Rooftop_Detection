@@ -62,7 +62,17 @@ YOLO v12 + SAM :
 
 YOLO v10 + SAM :
     
-
+    pixel_iou                  0.779056
+    pixel_dice                 0.864345
+    pixel_accuracy             0.998675
+    pixel_precision            0.856276
+    pixel_recall               0.902692
+    region_iou                 0.779056
+    region_dice                0.864345
+    region_precision           0.856276
+    region_recall              0.902692
+    region_success_accuracy    0.970121
+    dtype: float64
 
 
 DeepLabV3:
