@@ -1,0 +1,83 @@
+Unet :
+
+    pixel_iou                  0.633373
+    pixel_dice                 0.773915
+    pixel_accuracy             0.935245
+    pixel_precision            0.839680
+    pixel_recall               0.719803
+    region_iou                 0.633373
+    region_dice                0.773915
+    region_precision           0.839680
+    region_recall              0.719803
+    region_success_accuracy    1.000000
+
+
+Mask RCNN :
+
+    avg_pixel_iou	0.016778
+    avg_pixel_dice	0.018742
+    avg_pixel_accuracy	0.991765
+    avg_pixel_precision	0.019586
+    avg_pixel_recall	0.018309
+    avg_region_iou	0.016778
+    avg_region_dice	0.018742
+    avg_region_precision	0.019586
+    avg_region_recall	0.018309
+    avg_region_success_accuracy	0.020590
+    box_detection_precision	0.812676
+    box_detection_recall	0.553194
+    box_detection_f1	0.658287
+    mask_detection_precision	0.598196
+    mask_detection_recall	0.407196
+    mask_detection_f1	0.484553
+
+
+YOLO v11 + SAM :
+
+    pixel_iou                  0.779427
+    pixel_dice                 0.861659
+    pixel_accuracy             0.998940
+    pixel_precision            0.853415
+    pixel_recall               0.906468
+    region_iou                 0.779427
+    region_dice                0.861659
+    region_precision           0.853415
+    region_recall              0.906468
+    region_success_accuracy    0.961550
+
+YOLO v12 + SAM :
+    
+    pixel_iou                  0.780119
+    pixel_dice                 0.863200
+    pixel_accuracy             0.998868
+    pixel_precision            0.855653
+    pixel_recall               0.904678
+    region_iou                 0.780119
+    region_dice                0.863200
+    region_precision           0.855653
+    region_recall              0.904678
+    region_success_accuracy    0.964625
+    dtype: float64
+    
+
+YOLO v10 + SAM :
+    
+
+
+
+DeepLabV3:
+
+    pixel_iou                  0.648217
+    pixel_dice                 0.746504
+    pixel_accuracy             0.959552
+    pixel_precision            0.883239
+    pixel_recall               0.790907
+    region_iou                 0.717661
+    region_dice                0.815948
+    region_precision           0.883239
+    region_recall              0.790907
+    region_success_accuracy    0.911458
+    avg_loss, avg_iou, avg_f1 = 0.12398453354479796, 0.7141777280804783, 0.7444116576813686
+
+
+
