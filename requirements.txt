@@ -10,6 +10,8 @@ torchvision
 ipykernel
 notebook
 git+https://github.com/facebookresearch/segment-anything.git
+git+https://github.com/huggingface/transformers.git
+datasets
 monai
 scikit-learn
 ultralytics

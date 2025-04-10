@@ -11,14 +11,16 @@ Arial_images_1024_1024/
 Arial_test_images/
 Arial_validation_images/
 
-/Solar_Rooftop_Detection/Validation_results
-Solar_rooftop_Detection_indian_images/Demo_images/
-
-Solar_Rooftop_Detection/BaseLineModels/Unet_model/unet_rooftop_50.pth
+Solar_Rooftop_Detection/Validation_results
+Solar_rooftop_Detection_indian_images/
 
 ## Model Directory
 checkpoints/Final_Models
-
+YOLOs/
+Solar_Rooftop_Detection/DETR/
+DUMP/
+## CSV files 
+*.csv
 ## Logs Directory
 logs/
 

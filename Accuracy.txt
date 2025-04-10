@@ -1,3 +1,58 @@
+YOLO v10 + SAM :
+    
+    pixel_iou                  0.779056
+    pixel_dice                 0.864345
+    pixel_accuracy             0.998675
+    pixel_precision            0.856276
+    pixel_recall               0.902692
+    region_iou                 0.779056
+    region_dice                0.864345
+    region_precision           0.856276
+    region_recall              0.902692
+    region_success_accuracy    0.970121
+    dtype: float64
+
+
+YOLO v11 + SAM :
+
+    pixel_iou                  0.779427
+    pixel_dice                 0.861659
+    pixel_accuracy             0.998940
+    pixel_precision            0.853415
+    pixel_recall               0.906468
+    region_iou                 0.779427
+    region_dice                0.861659
+    region_precision           0.853415
+    region_recall              0.906468
+    region_success_accuracy    0.961550
+
+YOLO v12 + SAM :
+    
+    pixel_iou                  0.780119
+    pixel_dice                 0.863200
+    pixel_accuracy             0.998868
+    pixel_precision            0.855653
+    pixel_recall               0.904678
+    region_iou                 0.780119
+    region_dice                0.863200
+    region_precision           0.855653
+    region_recall              0.904678
+    region_success_accuracy    0.964625
+    dtype: float64
+    
+DETR + SAM :
+
+    pixel_iou                  0.744573
+    pixel_dice                 0.840372
+    pixel_accuracy             0.998134
+    pixel_precision            0.819180
+    pixel_recall               0.901531
+    region_iou                 0.744573
+    region_dice                0.840372
+    region_precision           0.819180
+    region_recall              0.901531
+    region_success_accuracy    0.953326
+
 Unet :
 
     pixel_iou                  0.633373
@@ -31,50 +86,6 @@ Mask RCNN :
     mask_detection_recall	0.407196
     mask_detection_f1	0.484553
 
-
-YOLO v11 + SAM :
-
-    pixel_iou                  0.779427
-    pixel_dice                 0.861659
-    pixel_accuracy             0.998940
-    pixel_precision            0.853415
-    pixel_recall               0.906468
-    region_iou                 0.779427
-    region_dice                0.861659
-    region_precision           0.853415
-    region_recall              0.906468
-    region_success_accuracy    0.961550
-
-YOLO v12 + SAM :
-    
-    pixel_iou                  0.780119
-    pixel_dice                 0.863200
-    pixel_accuracy             0.998868
-    pixel_precision            0.855653
-    pixel_recall               0.904678
-    region_iou                 0.780119
-    region_dice                0.863200
-    region_precision           0.855653
-    region_recall              0.904678
-    region_success_accuracy    0.964625
-    dtype: float64
-    
-
-YOLO v10 + SAM :
-    
-    pixel_iou                  0.779056
-    pixel_dice                 0.864345
-    pixel_accuracy             0.998675
-    pixel_precision            0.856276
-    pixel_recall               0.902692
-    region_iou                 0.779056
-    region_dice                0.864345
-    region_precision           0.856276
-    region_recall              0.902692
-    region_success_accuracy    0.970121
-    dtype: float64
-
-
 DeepLabV3:
 
     pixel_iou                  0.648217
@@ -88,6 +99,3 @@ DeepLabV3:
     region_recall              0.790907
     region_success_accuracy    0.911458
     avg_loss, avg_iou, avg_f1 = 0.12398453354479796, 0.7141777280804783, 0.7444116576813686
-
-
-
