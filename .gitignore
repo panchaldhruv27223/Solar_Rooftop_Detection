@@ -18,7 +18,7 @@ Solar_rooftop_Detection_indian_images/
 checkpoints/Final_Models
 YOLOs/
 Solar_Rooftop_Detection/DETR/
-Solar_Rooftop_Detection/DUMp
+DUMp/
 
 ## CSV files 
 *.csv
