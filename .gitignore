@@ -18,7 +18,9 @@ Solar_rooftop_Detection_indian_images/
 checkpoints/Final_Models
 YOLOs/
 Solar_Rooftop_Detection/DETR/
-DUMP/
+Solar_Rooftop_Detection/DUMP/
+
+
 ## CSV files 
 *.csv
 ## Logs Directory
