@@ -13,6 +13,7 @@ Arial_validation_images/
 
 Solar_Rooftop_Detection/Validation_results
 Solar_rooftop_Detection_indian_images/
+TRY_ON_OTHER_DATASET/COMPARISON_WITH_ROAD_SEGMENTATION/ROAD_DATASET
 
 ## Model Directory
 checkpoints/Final_Models
