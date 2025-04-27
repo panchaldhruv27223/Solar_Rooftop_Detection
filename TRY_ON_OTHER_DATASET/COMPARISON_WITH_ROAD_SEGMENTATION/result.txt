@@ -1,0 +1,41 @@
+Deeplabv3 : 
+    pixel_iou                  0.600610
+    pixel_dice                 0.741515
+    pixel_accuracy             0.979425
+    pixel_precision            0.808931
+    pixel_recall               0.697998
+    region_iou                 0.600610
+    region_dice                0.741515
+    region_precision           0.808931
+    region_recall              0.697998
+    region_success_accuracy    0.846939
+
+UNET :
+    pixel_iou                  0.588567
+    pixel_dice                 0.740378
+    pixel_accuracy             0.967679
+    pixel_precision            0.810354
+    pixel_recall               0.682496
+    region_iou                 0.588567
+    region_dice                0.740378
+    region_precision           0.810354
+    region_recall              0.682496
+    region_success_accuracy    1.000000
+
+MaskRCNN:
+    avg_pixel_iou	0.016778
+    avg_pixel_dice	0.018742
+    avg_pixel_accuracy	0.991765
+    avg_pixel_precision	0.019586
+    avg_pixel_recall	0.018309
+    avg_region_iou	0.016778
+    avg_region_dice	0.018742
+    avg_region_precision	0.019586
+    avg_region_recall	0.018309
+    avg_region_success_accuracy	0.020590
+    box_detection_precision	0.812676
+    box_detection_recall	0.553194
+    box_detection_f1	0.658287
+    mask_detection_precision	0.598196
+    mask_detection_recall	0.407196
+    mask_detection_f1	0.484553
