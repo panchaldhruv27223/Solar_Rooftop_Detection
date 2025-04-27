@@ -4,10 +4,6 @@ Deeplabv3 :
     pixel_accuracy             0.979425
     pixel_precision            0.808931
     pixel_recall               0.697998
-    region_iou                 0.600610
-    region_dice                0.741515
-    region_precision           0.808931
-    region_recall              0.697998
     region_success_accuracy    0.846939
 
 UNET :
