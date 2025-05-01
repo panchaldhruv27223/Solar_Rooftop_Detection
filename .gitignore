@@ -29,6 +29,10 @@ logs/
 ## Model Weights
 *.pth
 *.zip
+*.png
+*.jpg
+*.tiff
+*.bmp
 
 ## .ipynb
 test.ipynb
