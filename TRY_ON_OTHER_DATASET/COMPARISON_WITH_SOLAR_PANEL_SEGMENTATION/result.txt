@@ -24,6 +24,7 @@ UNET :
     region_success_accuracy    1.000000
 
 
+
 MaskRCNN:
     avg_pixel_iou	0.432073
     avg_pixel_dice	0.453880
@@ -41,3 +42,57 @@ MaskRCNN:
     mask_detection_precision	0.749138
     mask_detection_recall	0.755652
     mask_detection_f1	0.752381
+
+
+YOLOv10 + SAM
+    pixel_iou                  0.878288
+    pixel_dice                 0.922952
+    pixel_accuracy             0.989098
+    pixel_precision            0.893993
+    pixel_recall               0.980446
+    region_iou                 0.878288
+    region_dice                0.922952
+    region_precision           0.893993
+    region_recall              0.980446
+    region_success_accuracy    0.974359
+
+
+YOLOv11 + SAM
+    pixel_iou                  0.881936
+    pixel_dice                 0.928110
+    pixel_accuracy             0.989532
+    pixel_precision            0.900556
+    pixel_recall               0.977226
+    region_iou                 0.881936
+    region_dice                0.928110
+    region_precision           0.900556
+    region_recall              0.977226
+    region_success_accuracy    0.979701
+
+
+
+YOLOv12 + SAM
+    pixel_iou                  0.880547
+    pixel_dice                 0.926848
+    pixel_accuracy             0.989002
+    pixel_precision            0.898385
+    pixel_recall               0.976996
+    region_iou                 0.880547
+    region_dice                0.926848
+    region_precision           0.898385
+    region_recall              0.976996
+    region_success_accuracy    0.979636
+
+
+DETR + SAM
+
+    pixel_iou                  0.843871
+    pixel_dice                 0.888461
+    pixel_accuracy             0.975882
+    pixel_precision            0.858029
+    pixel_recall               0.982312
+    region_iou                 0.843871
+    region_dice                0.888461
+    region_precision           0.858029
+    region_recall              0.982312
+    region_success_accuracy    0.936893

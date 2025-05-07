@@ -7,31 +7,85 @@ Deeplabv3 :
     region_success_accuracy    0.846939
 
 UNET :
-    pixel_iou                  0.588567
-    pixel_dice                 0.740378
-    pixel_accuracy             0.967679
-    pixel_precision            0.810354
-    pixel_recall               0.682496
-    region_iou                 0.588567
-    region_dice                0.740378
-    region_precision           0.810354
-    region_recall              0.682496
-    region_success_accuracy    1.000000
+    pixel_iou                  0.249266
+    pixel_dice                 0.396487
+    pixel_accuracy             0.866894
+    pixel_precision            0.579099
+    pixel_recall               0.306533
+    region_iou                 0.249266
+    region_dice                0.396487
+    region_precision           0.579099
+    region_recall              0.306533
+    region_success_accuracy    0.000000
+
 
 MaskRCNN:
-    avg_pixel_iou	0.016778
-    avg_pixel_dice	0.018742
-    avg_pixel_accuracy	0.991765
-    avg_pixel_precision	0.019586
-    avg_pixel_recall	0.018309
-    avg_region_iou	0.016778
-    avg_region_dice	0.018742
-    avg_region_precision	0.019586
-    avg_region_recall	0.018309
-    avg_region_success_accuracy	0.020590
-    box_detection_precision	0.812676
-    box_detection_recall	0.553194
-    box_detection_f1	0.658287
-    mask_detection_precision	0.598196
-    mask_detection_recall	0.407196
-    mask_detection_f1	0.484553
+    avg_pixel_iou	0.105963
+    avg_pixel_dice	0.118910
+    avg_pixel_accuracy	0.851456
+    avg_pixel_precision	0.121846
+    avg_pixel_recall	0.118414
+    avg_region_iou	0.105963
+    avg_region_dice	0.118910
+    avg_region_precision	0.121846
+    avg_region_recall	0.118414
+    avg_region_success_accuracy	0.135537
+    box_detection_precision	0.677590
+    box_detection_recall	0.543681
+    box_detection_f1	0.603294
+    mask_detection_precision	0.493658
+    mask_detection_recall	0.396098
+    mask_detection_f1	0.439529
+
+
+YOLOv10 + SAM
+    pixel_iou                  0.702956
+    pixel_dice                 0.802753
+    pixel_accuracy             0.991124
+    pixel_precision            0.747998
+    pixel_recall               0.933783
+    region_iou                 0.702956
+    region_dice                0.802753
+    region_precision           0.747998
+    region_recall              0.933783
+    region_success_accuracy    0.896000
+
+
+YOLOv11 + SAM
+    pixel_iou                  0.675496
+    pixel_dice                 0.771218
+    pixel_accuracy             0.993290
+    pixel_precision            0.716359
+    pixel_recall               0.941323
+    region_iou                 0.675496
+    region_dice                0.771218
+    region_precision           0.716359
+    region_recall              0.941323
+    region_success_accuracy    0.852431
+
+
+YOLOv12 + SAM
+    pixel_iou                  0.697732
+    pixel_dice                 0.796191
+    pixel_accuracy             0.993112
+    pixel_precision            0.741974
+    pixel_recall               0.937348
+    region_iou                 0.697732
+    region_dice                0.796191
+    region_precision           0.741974
+    region_recall              0.937348
+    region_success_accuracy    0.889503
+
+
+
+DETR + SAM
+    pixel_iou                  0.665061
+    pixel_dice                 0.761656
+    pixel_accuracy             0.990838
+    pixel_precision            0.705025
+    pixel_recall               0.943858
+    region_iou                 0.665061
+    region_dice                0.761656
+    region_precision           0.705025
+    region_recall              0.943858
+    region_success_accuracy    0.826284

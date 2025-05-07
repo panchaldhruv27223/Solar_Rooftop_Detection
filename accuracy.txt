@@ -1,0 +1,167 @@
+# 1. Rooftop
+
+    YOLO v10 + SAM :
+        
+        pixel_iou                  0.779056
+        pixel_dice                 0.864345
+        region_success_accuracy    0.970121
+
+
+    YOLO v11 + SAM :
+
+        pixel_iou                  0.779427
+        pixel_dice                 0.861659
+        region_success_accuracy    0.961550
+
+    YOLO v12 + SAM :
+        
+        pixel_iou                  0.780119
+        pixel_dice                 0.863200
+        region_success_accuracy    0.964625
+        
+    DETR + SAM :
+
+        pixel_iou                  0.744573
+        pixel_dice                 0.840372
+        region_success_accuracy    0.953326
+
+    Unet :
+
+        pixel_iou                  0.633373
+        pixel_dice                 0.773915
+        region_success_accuracy    1.000000
+
+
+    Mask RCNN :
+
+        pixel_iou	0.016778
+        pixel_dice	0.018742
+        region_success_accuracy	0.020590
+
+    DeepLabV3:
+
+        pixel_iou                  0.648217
+        pixel_dice                 0.746504
+        region_success_accuracy    0.911458
+
+# 2. Road
+
+    Deeplabv3 : 
+        pixel_iou                  0.600610
+        pixel_dice                 0.741515
+        region_success_accuracy    0.846939
+
+    UNET :
+        pixel_iou                  0.588567
+        pixel_dice                 0.740378
+        region_success_accuracy    1.000000
+
+    MaskRCNN:
+        pixel_iou	0.016778
+        pixel_dice	0.018742
+        region_success_accuracy	0.020590
+
+
+    YOLOv10 + SAM :
+        pixel_iou                  0.103619
+        pixel_dice                 0.180173
+        region_success_accuracy    0.000000
+
+    YOLOv11 + SAM :
+
+        pixel_iou                  0.117312
+        pixel_dice                 0.193483
+        region_success_accuracy    0.026316
+
+
+    YOLOv12 + SAM :
+
+        pixel_iou                  0.114101
+        pixel_dice                 0.190610
+        region_success_accuracy    0.025907
+
+    DETR + SAM  :
+        pixel_iou                  0.146798
+        pixel_dice                 0.220483
+        region_success_accuracy    0.075472
+
+
+# 3. Solar Panel
+
+
+    Deeplabv3 : 
+        pixel_iou                  0.885407
+        pixel_dice                 0.923173
+        region_success_accuracy    0.945245
+
+
+    UNET :
+        pixel_iou                  0.914100
+        pixel_dice                 0.953941
+        region_success_accuracy    1.000000
+
+
+    MaskRCNN:
+        pixel_iou	0.432073
+        pixel_dice	0.453880
+        region_success_accuracy	0.473329
+
+
+    YOLOv10 + SAM
+        pixel_iou                  0.878288
+        pixel_dice                 0.922952
+        region_success_accuracy    0.974359
+
+
+    YOLOv11 + SAM
+        pixel_iou                  0.881936
+        pixel_dice                 0.928110
+        region_success_accuracy    0.979701
+
+
+    YOLOv12 + SAM
+        pixel_iou                  0.880547
+        pixel_dice                 0.926848
+        region_success_accuracy    0.979636
+
+    DETR + SAM
+
+        pixel_iou                  0.843871
+        pixel_dice                 0.888461
+        region_success_accuracy    0.936893
+
+
+# 4. Tree
+
+
+    Deeplabv3 : 
+        pixel_iou                  0.600610
+        pixel_dice                 0.741515
+        region_success_accuracy    0.846939
+
+    UNET :
+        pixel_iou                  0.249266
+        pixel_dice                 0.396487
+        region_success_accuracy    0.000000
+
+
+    MaskRCNN:
+        pixel_iou	0.105963
+        pixel_dice	0.118910
+        region_success_accuracy	0.135537
+
+    YOLOv10 + SAM
+        pixel_iou                  0.702956
+        pixel_dice                 0.802753
+        region_success_accuracy    0.896000
+
+
+    YOLOv11 + SAM
+        pixel_iou                  0.675496
+        pixel_dice                 0.771218
+        region_success_accuracy    0.852431
+
+    YOLOv12 + SAM
+        pixel_iou                  0.697732
+        pixel_dice                 0.796191
+        region_success_accuracy    0.889503

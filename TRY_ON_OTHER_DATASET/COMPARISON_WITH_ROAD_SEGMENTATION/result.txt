@@ -35,3 +35,56 @@ MaskRCNN:
     mask_detection_precision	0.598196
     mask_detection_recall	0.407196
     mask_detection_f1	0.484553
+
+
+YOLOv10 + SAM :
+    pixel_iou                  0.103619
+    pixel_dice                 0.180173
+    pixel_accuracy             0.636502
+    pixel_precision            0.108429
+    pixel_recall               0.856265
+    region_iou                 0.103619
+    region_dice                0.180173
+    region_precision           0.108429
+    region_recall              0.856265
+    region_success_accuracy    0.000000
+
+YOLOv11 + SAM :
+
+    pixel_iou                  0.117312
+    pixel_dice                 0.193483
+    pixel_accuracy             0.684393
+    pixel_precision            0.124065
+    pixel_recall               0.850125
+    region_iou                 0.117312
+    region_dice                0.193483
+    region_precision           0.124065
+    region_recall              0.850125
+    region_success_accuracy    0.026316
+
+
+YOLOv12 + SAM :
+
+pixel_iou                  0.114101
+pixel_dice                 0.190610
+pixel_accuracy             0.636438
+pixel_precision            0.120318
+pixel_recall               0.846898
+region_iou                 0.114101
+region_dice                0.190610
+region_precision           0.120318
+region_recall              0.846898
+region_success_accuracy    0.025907
+
+
+DETR + SAM  :
+    pixel_iou                  0.146798
+    pixel_dice                 0.220483
+    pixel_accuracy             0.761027
+    pixel_precision            0.164171
+    pixel_recall               0.824939
+    region_iou                 0.146798
+    region_dice                0.220483
+    region_precision           0.164171
+    region_recall              0.824939
+    region_success_accuracy    0.075472
