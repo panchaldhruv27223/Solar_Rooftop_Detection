@@ -89,6 +89,8 @@ Standalone segmentation models trained on aerial imagery:
 
 Stay tuned for results on the **Ahmedabad dataset**, focusing on dense urban morphology.
 
+Developed by Dhruv Panchal And Ritwik Agrawal. For questions or collaboration, reach out via GitHub.
+
 > For setup, usage, training, and visualization instructions — refer to the upcoming usage section or contact the authors.
 
 ---
