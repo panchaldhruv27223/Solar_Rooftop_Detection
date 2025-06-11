@@ -8,10 +8,6 @@ from PIL import Image
 from tqdm import tqdm
 import copy
 import matplotlib.pyplot as plt
-
-os.chdir("/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images")
-os.getcwd()
-
 from accuracy_indian import compute_metrics
 
 
@@ -72,7 +68,7 @@ def create_deeplab(output_channels=1):
     return model
 
 
-def main(data_dir, model_output_path, image_output_path,  model_path="", num_epochs= 50, batch_size = 2, learning_rate = 1e-4):
+def deeplabv3_train(data_dir :str , model_output_path : str, image_output_path : str,  model_path : str ="", num_epochs : int = 50, batch_size :int = 2, learning_rate : float = 1e-4):
 
     data_dir = data_dir
 
@@ -85,32 +81,39 @@ def main(data_dir, model_output_path, image_output_path,  model_path="", num_epo
     dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
 
     if model_path : 
+        print("Loading The Pretrain Model")
         model = torch.load(model_path, weights_only=False)
     else:
+        print("Define the model Architecture.")
         model = create_deeplab(output_channels=1)  
+        print(model)
 
-    trained_model, losses = train_model(model, dataloader, num_epochs=num_epochs, learning_rate=1e-4)
+    # trained_model, losses = train_model(model, dataloader, num_epochs=num_epochs, learning_rate=1e-4)
 
-    torch.save(trained_model, model_output_path)
+    # torch.save(trained_model, model_output_path)
 
-    deeplabv3_loss = losses
-    epochs = list(range(1,num_epochs+1))
+    # deeplabv3_loss = losses
+    # epochs = list(range(1,num_epochs+1))
 
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(epochs, deeplabv3_loss, label='DeepLabV3 Loss', color='blue')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Loss vs Epoch')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(image_output_path)
-    plt.tight_layout()
-    plt.show()
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(epochs, deeplabv3_loss, label='DeepLabV3 Loss', color='blue')
+    # plt.xlabel('Epoch')
+    # plt.ylabel('Loss')
+    # plt.title('Loss vs Epoch')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.savefig(image_output_path)
+    # plt.tight_layout()
+    # plt.show()
+
+
+
+
 
 
 if __name__ == "__main__":
-
+    print("Done")
     data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/train" 
     model_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplab_rooftop_full_50_indian_usa.pth"
     image_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplabv3_loss_vs_epochs_usa.png"
@@ -119,6 +122,4 @@ if __name__ == "__main__":
     batch_size = 2
     learning_rate = 1e-4
     
-    main(data_dir=data_dir, model_output_path=model_output_path, image_output_path=image_output_path, num_epochs=num_epochs, batch_size=batch_size, learning_rate=learning_rate)
-
-    
+    deeplabv3_train(data_dir=data_dir, model_output_path=model_output_path, image_output_path=image_output_path, model_path= model_path,num_epochs=num_epochs, batch_size=batch_size, learning_rate=learning_rate)
