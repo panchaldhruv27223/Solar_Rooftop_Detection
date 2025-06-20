@@ -19,6 +19,10 @@ from torchvision.models.detection import maskrcnn_resnet50_fpn, MaskRCNN_ResNet5
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+
+
 import sys
 current_dir = os.path.dirname(__file__)
 # print(current_dir)
@@ -353,8 +357,22 @@ class deepLabV3:
 
 
 ### UNET MODEL 
+
+# Augmentation Of Images and masks
+ 
+def get_training_augmentation():
+    return A.Compose([
+        A.Resize(1024, 1024),
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.RandomRotate90(p=0.5),
+        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.1, rotate_limit=30, p=0.5),
+        A.RandomBrightnessContrast(p=0.3),
+        ToTensorV2(transpose_mask=True)
+    ])
+
+ 
 # Dataset for UNET Model
-#  
 class RooftopDataset(Dataset):
     def __init__(self, root, image_folder="images", mask_folder="masks", transform=None):
         self.root = root
@@ -373,16 +391,24 @@ class RooftopDataset(Dataset):
         mask_path = os.path.join(self.mask_dir, self.image_masksnames[idx])
         
         image = cv2.imread(img_path)
-        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-        
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = image.astype(np.uint8)
+
+        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         mask = mask.astype(np.float32) / 255.0
         
         if self.transform:
-            image = self.transform(image)
-            mask = transforms.ToTensor()(mask).unsqueeze(0)  # Ensure mask shape [1, H, W]
-        
-        return image, mask.squeeze(0)  # Ensure mask shape [H, W]
+            augmented = self.transform(image=image, mask=mask)
+            image = augmented['image']
+            mask = augmented['mask']
+            mask = mask.unsqueeze(0)
+            # print("input masks: ",mask.size())
+        # print("start from data loader")
+        # print(image.shape, image.dtype)
+        # print(mask.shape, mask.dtype)
+        # print("end from data loader")
+
+        return image.float(), mask.float()
 
 
 # U-Net Model
@@ -452,11 +478,7 @@ class UnetTrain:
         self.model_output_path = model_output_path
         self.model_path = model_path
 
-        self.transform = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize((1024, 1024)),
-            transforms.ToTensor()
-        ])
+        self.transform = get_training_augmentation()
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Using device:", self.device)
@@ -472,13 +494,20 @@ class UnetTrain:
             
             for images, masks in train_loader:
                 images, masks = images.to(self.device), masks.to(self.device)  # Ensure correct shape [B, 1, H, W]
+                ## masks shape
+                print(masks.size())
                 
                 optimizer.zero_grad()
                 outputs = model(images)
+                # outputs = outputs.squeeze()
+                # print(torch.unique(outputs))
+                print("output masks shape is : ",outputs.size())
                 loss = criterion(outputs, masks)
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.item()
+
+                print(loss)
             
             print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss/len(train_loader):.4f}")
             losses.append(epoch_loss/len(train_loader))
@@ -494,9 +523,16 @@ class UnetTrain:
         train_dataset = RooftopDataset(self.root_dir, image_folder="images", mask_folder="masks",transform=self.transform)
         train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
 
+        # print(train_loader)
+        # data_iter = iter(train_loader)
+        # print(data_iter)
+        # images_dummy, masks_dummy = next(data_iter)
+        # print(images_dummy.shape, masks_dummy.shape)
+        # print(train_loader[0])
+
         model = UNet()
         
-        # Training Setup
+        # # Training Setup
         if self.model_path:
             model.load_state_dict(torch.load(self.model_path))
             print("load pretrain model")
@@ -510,18 +546,18 @@ class UnetTrain:
         
         loss = self.train(model, train_loader, criterion= criterion, optimizer=optimizer,epochs=self.number_epoch)
         
-        unet_loss = loss
+        # unet_loss = loss
 
-        epochs = list(range(1,51))
-        plt.figure(figsize=(10, 6))
-        plt.plot(epochs, unet_loss, label='UNet Loss', color='red')
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.title('Loss vs Epoch')
-        plt.legend()
-        plt.grid(True)
-        plt.savefig(self.image_output_path)
-        plt.show()
+        # epochs = list(range(1,51))
+        # plt.figure(figsize=(10, 6))
+        # plt.plot(epochs, unet_loss, label='UNet Loss', color='red')
+        # plt.xlabel('Epoch')
+        # plt.ylabel('Loss')
+        # plt.title('Loss vs Epoch')
+        # plt.legend()
+        # plt.grid(True)
+        # plt.savefig(self.image_output_path)
+        # plt.show()
 
 
 
@@ -544,30 +580,31 @@ if __name__ == "__main__":
 
 
 
-    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/train" 
-    # model_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_rooftop_full_50_indian_usa.pth"
-    # image_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_loss_vs_epochs_usa.png"
+    data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/train" 
+    model_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_medium_gandhinagar_model_1.pth"
+    image_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_medium_gandhinagar_model_1_loss_epochs.png"
     # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_rooftop_50_indian_usa.pth"
-    # num_epochs= 50
-    # batch_size = 2
-    # learning_rate = 1e-4
+    model_path = ""
+    num_epochs= 50
+    batch_size = 2
+    learning_rate = 1e-4
 
-    # unet = UnetTrain(root_dir=data_dir, learning_rate=learning_rate,number_epoch=num_epochs,image_output_path=image_output_path, model_output_path=model_output_path, model_path=model_path)
-    # unet.train_unet()
+    unet = UnetTrain(root_dir=data_dir, learning_rate=learning_rate,number_epoch=num_epochs,image_output_path=image_output_path, model_output_path=model_output_path, model_path=model_path)
+    unet.train_unet()
 
 
 
 
-    root_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/train"
-    batch_size=4
-    num_classes = 2
-    learning_rate = 0.0001
-    number_epochs=50
-    model_output_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskrcnn_model_scratch.pth"
-    image_output_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/loss_image_maskrcnn.png"
-    num_workers=2
-    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/BaseLineModels/Maksed_RCNN/mask_rcnn_epoch_50_full.pth"
+    # root_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/train"
+    # batch_size=4
+    # num_classes = 2
+    # learning_rate = 0.0001
+    # number_epochs=50
+    # model_output_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskrcnn_model_scratch.pth"
+    # image_output_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/loss_image_maskrcnn.png"
+    # num_workers=2
+    # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/BaseLineModels/Maksed_RCNN/mask_rcnn_epoch_50_full.pth"
 
-    mask_rcnn_model = maskRCNN(batch_size=batch_size, num_classes = num_classes, learning_rate = learning_rate, number_epochs=number_epochs, data_dir =root_dir, model_output_path=model_output_path, image_output_path=image_output_path, num_workers=num_workers)
+    # mask_rcnn_model = maskRCNN(batch_size=batch_size, num_classes = num_classes, learning_rate = learning_rate, number_epochs=number_epochs, data_dir =root_dir, model_output_path=model_output_path, image_output_path=image_output_path, num_workers=num_workers)
 
-    mask_rcnn_model.train()
+    # mask_rcnn_model.train()
