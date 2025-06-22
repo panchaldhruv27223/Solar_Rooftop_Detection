@@ -35,6 +35,18 @@ from Solar_rooftop_Detection_indian_images.accuracy_indian import compute_metric
 
 # from accuracy_indian import compute_metrics
 
+# Augmentation Of Images and masks
+ 
+def get_training_augmentation():
+    return A.Compose([
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.RandomRotate90(p=0.5),
+        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.1, rotate_limit=30, p=0.5),
+        A.RandomBrightnessContrast(p=0.3),
+        ToTensorV2()
+    ])
+
 
 
 # Your function to extract individual masks and bounding boxes
@@ -53,11 +65,15 @@ def extract_individual_objects(input_mask):
     return object_masks, bounding_boxes
 
 
+
 # Define the dataset For MaskRCNN
-class RooftopDataset(Dataset):
-    def __init__(self, root, transforms=None):
+class RooftopDatasetMaskRCNN(Dataset):
+    def __init__(self, root, augmentation=True):
         self.root = root
-        self.transforms = transforms
+        self.augmentation = augmentation
+        if self.augmentation:
+            self.transform = get_training_augmentation()
+        
         self.images_dir = os.path.join(root, 'images')
         self.masks_dir = os.path.join(root, 'masks')
         self.imgs = sorted([f for f in os.listdir(self.images_dir) if f.endswith(('.jpg', '.png'))])
@@ -73,39 +89,59 @@ class RooftopDataset(Dataset):
         if img is None:
             raise FileNotFoundError(f"Failed to load image: {img_path}")
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = T.ToTensor()(img)  # Shape: (3, 1024, 1024)
 
         # Load multi-instance mask
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-        if mask is None:
-            # print(f"Warning: Mask failed to load for {mask_path}")
+
+        # Extract individual masks and boxes
+        instance_masks, boxes = extract_individual_objects(mask)
+
+        if not instance_masks or not boxes:
+            # print(f"No rooftops detected in {img_path}")
             boxes = torch.zeros((0, 4), dtype=torch.float32)
             masks = torch.zeros((0, 1024, 1024), dtype=torch.uint8)
             labels = torch.zeros((0,), dtype=torch.int64)
         else:
-            # Extract individual masks and boxes
-            instance_masks, boxes = extract_individual_objects(mask)
-            if not instance_masks or not boxes:
-                # print(f"No rooftops detected in {img_path}")
-                boxes = torch.zeros((0, 4), dtype=torch.float32)
-                masks = torch.zeros((0, 1024, 1024), dtype=torch.uint8)
-                labels = torch.zeros((0,), dtype=torch.int64)
-            else:
-                # Validate consistency
-                assert len(boxes) == len(instance_masks), f"Mismatch: {len(boxes)} boxes vs {len(instance_masks)} masks"
+            # Validate consistency
+            assert len(boxes) == len(instance_masks), f"Mismatch: {len(boxes)} boxes vs {len(instance_masks)} masks"
+            
+            # Stack masks and convert to tensor
+            masks = np.stack(instance_masks, axis=0)  # Shape: (num_instances, 1024, 1024)
+            
+            if self.augmentation:
+                transformed = self.transform(image=img, masks=list(masks))
+                img = transformed["image"]
+                masks = transformed["masks"]
+
+                img = img.float()
                 
-                # Stack masks and convert to tensor
-                masks = np.stack(instance_masks, axis=0)  # Shape: (num_instances, 1024, 1024)
+                masks = torch.stack([torch.tensor(m, dtype=torch.uint8) for m in masks])
+                for i in masks:
+                    torch.unique(i)
+
+                masks = masks.float()
+                img = img / 255.0
+
+            else:
+                # print("No augmentation applied.")
+                img = T.ToTensor()(img)
                 masks = torch.from_numpy(masks).to(dtype=torch.uint8)
                 
-                # Convert boxes to tensor
-                boxes = torch.as_tensor(boxes, dtype=torch.float32)  # Shape: (num_instances, 4)
-                
-                # Assign labels (all 1 for rooftops)
-                labels = torch.ones((len(instance_masks),), dtype=torch.int64)
-                
-                # Debug info
-                # print(f"{img_path}: {len(instance_masks)} rooftops")
+
+            # Convert boxes to tensor
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)  # Shape: (num_instances, 4)
+            
+            # Assign labels (all 1 for rooftops)
+            labels = torch.ones((len(instance_masks),), dtype=torch.int64)
+        
+            # Debug info
+            # print(f"{img_path}: {len(instance_masks)} rooftops")
+        
+        
+        # print(f"image size : {img.size()} and masks size is : {masks.size()}")
+        # print(f"uniques values of images : {torch.unique(img)}")
+        # print(f"uniques values of masks : {torch.unique(masks)}")
+
 
         target = {
             "boxes": boxes,
@@ -113,9 +149,6 @@ class RooftopDataset(Dataset):
             "masks": masks,
             "image_id": torch.tensor([idx])
         }
-
-        if self.transforms:
-            img, target = self.transforms(img, target)
 
         return img, target
 
@@ -127,7 +160,7 @@ class RooftopDataset(Dataset):
 # Mask RCNN model.
 
 class maskRCNN:
-    def __init__(self, batch_size=4, num_classes = 2, learning_rate = 0.0001, number_epochs=50, data_dir :str ="", model_output_path : str="", image_output_path : str="",  model_path : str ="", num_workers=2):
+    def __init__(self, batch_size=4, num_classes = 2, learning_rate = 0.0001, augmentation=True, number_epochs=50, data_dir :str ="", model_output_path : str="", image_output_path : str="",  model_path : str ="", num_workers=2):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.num_classes = num_classes
@@ -135,7 +168,7 @@ class maskRCNN:
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.num_workers = num_workers
-
+        self.augmentation = augmentation
         self.root_dir = data_dir
         self.model_path = model_path
         self.model_output_path = model_output_path
@@ -197,8 +230,14 @@ class maskRCNN:
 
     def train(self):
 
-        dataset = RooftopDataset(self.root_dir)
+        dataset = RooftopDatasetMaskRCNN(root=self.root_dir, augmentation=self.augmentation)
         data_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, collate_fn=lambda x: tuple(zip(*x)))
+
+        # iter_data = iter(data_loader)
+        # dummmy = next(iter_data)
+        # print(dummmy)
+
+        # return
 
         print("Data is loaded")
 
@@ -212,27 +251,27 @@ class maskRCNN:
             model.train()
 
 
-        # optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
 
-        # loss = self.train_model(model, data_loader, optimizer, self.device, num_epochs=self.num_epochs)
+        loss = self.train_model(model, data_loader, optimizer, self.device, num_epochs=self.num_epochs)
 
-        # torch.save(model, self.model_output_path)
+        torch.save(model, self.model_output_path)
 
-        # print(f"Model saved !.")
+        print(f"Model saved !.")
               
               
-        # epochs = list(range(1, 51))
-        # maskrcnn_loss = loss
-        # plt.figure(figsize=(10, 6))
-        # plt.plot(epochs, maskrcnn_loss, label='Mask R-CNN Loss', color='green')
-        # plt.xlabel('Epoch')
-        # plt.ylabel('Loss')
-        # plt.title('Loss vs Epoch')
-        # plt.legend()
-        # plt.grid(True)
-        # plt.savefig(self.image_output_path)
-        # plt.tight_layout()
-        # plt.show()
+        epochs = list(range(1, 51))
+        maskrcnn_loss = loss
+        plt.figure(figsize=(10, 6))
+        plt.plot(epochs, maskrcnn_loss, label='Mask R-CNN Loss', color='green')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Loss vs Epoch')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(self.image_output_path)
+        plt.tight_layout()
+        plt.show()
 
 
     
@@ -240,13 +279,14 @@ class maskRCNN:
 
 # Define the dataset class For deeplabv3
 class SegmentationDataset(Dataset):
-    def __init__(self, root, image_folder="images", mask_folder="masks", transforms=None):
+    def __init__(self, root, image_folder="images", mask_folder="masks", is_transform=False, transforms=None):
         self.root = root
-        self.transforms = transforms
+        self.transform = transforms
         self.image_folder = os.path.join(root, image_folder)
         self.mask_folder = os.path.join(root, mask_folder)
-        self.image_names = sorted(os.listdir(self.image_folder))[:-1]
-        self.mask_names = sorted(os.listdir(self.mask_folder))[:-1]
+        self.image_names = sorted(os.listdir(self.image_folder))
+        self.mask_names = sorted(os.listdir(self.mask_folder))
+        self.is_transform = is_transform
 
     def __len__(self):
         return len(self.image_names)
@@ -254,31 +294,50 @@ class SegmentationDataset(Dataset):
     def __getitem__(self, idx):
         img_path = os.path.join(self.image_folder, self.image_names[idx])
         mask_path = os.path.join(self.mask_folder, self.mask_names[idx])
-        image = Image.open(img_path).convert("RGB")
-        mask = Image.open(mask_path).convert("L")  # Grayscale mask
-        if self.transforms:
-            image = self.transforms(image)
+        # image = Image.open(img_path).convert("RGB")
+
+        # mask = Image.open(mask_path).convert("L")  # Grayscale mask
+
+        image = cv2.imread(img_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # image = image.astype(np.uint8)
+        image = image/255.0
+
+        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+
+        if self.is_transform:
+            augmented = self.transform(image=image, mask=mask)
+            image = augmented['image']
+            mask = augmented['mask']
+            mask = mask/255.0
+            mask = mask.unsqueeze(0)
+
+            # print(f"image size : {image.size()} mask size : {mask.size()}")
+
+        else:
+            image = Image.fromarray(image)
+            image = self.transform(image)
             mask = transforms.ToTensor()(mask)  # Mask to tensor (0-1 range)
-        return {"image": image, "mask": mask}
+            # print(f"image size : {image.size()} mask size : {mask.size()}")
+
+        # print(torch.unique(image))
+        
+        return {"image": image.float(), "mask": mask.float()}
     
 
 
 ## deeplabv3 model
 class deepLabV3:
 
-    def __init__(self, data_dir :str , model_output_path : str, image_output_path : str,  model_path : str ="", num_epochs : int = 50, batch_size :int = 2, learning_rate : float = 1e-4):
+    def __init__(self, data_dir :str , model_output_path : str, image_output_path : str,  model_path : str ="", num_epochs : int = 50, batch_size :int = 2, learning_rate : float = 1e-4, is_transform=False):
         self.data_dir = data_dir
-
-        self.transform = transforms.Compose([
-            transforms.Resize((1024, 1024)),
-            transforms.ToTensor(),
-        ])
         self.model_output_path = model_output_path
         self.image_output_path = image_output_path
         self.model_path = model_path
         self.number_epoch = num_epochs
         self.batch_size = batch_size
         self.learning_rate = learning_rate
+        self.is_transform = is_transform
 
 
     def train_model(self, model, dataloader, num_epochs=50, learning_rate = 1e-4):
@@ -291,12 +350,18 @@ class deepLabV3:
         for epoch in range(num_epochs):
             print(f"Epoch {epoch+1}/{num_epochs}")
             running_loss = 0.0
-            for sample in tqdm(dataloader):
+            for sample in dataloader:
                 inputs = sample["image"].to(device)
                 masks = sample["mask"].to(device)
+                # print(masks.size())
+                # print(torch.unique(masks))
+
                 optimizer.zero_grad()
                 outputs = model(inputs)["out"]  # Shape: (batch, 1, H, W)
+                
                 # print(outputs.shape)
+                # print(torch.unique(outputs))
+                
                 loss = criterion(outputs, masks)
                 loss.backward()
                 optimizer.step()
@@ -316,8 +381,21 @@ class deepLabV3:
 
     def deeplabv3_train(self):
 
-        dataset = SegmentationDataset(self.data_dir, transforms= self.transform)
-        dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
+        if self.is_transform :
+            transform = get_training_augmentation()
+        else:
+            transform = transforms.Compose([
+            transforms.Resize((1024, 1024)),
+            transforms.ToTensor()])
+        dataset = SegmentationDataset(self.data_dir, is_transform=is_transform, transforms= transform)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+
+        # iter_data = iter(dataloader)
+        # dummmy = next(iter_data)
+        # print(dummmy)
+        # image_d, mask_d = dummmy["image"], dummmy["mask"]
+        # print(f"images size {image_d.size()} mask size {mask_d.size()}")
+        # return   
 
         
         if self.model_path : 
@@ -326,18 +404,15 @@ class deepLabV3:
         else:
             print("Define the model Architecture.")
             model = self.create_deeplab(output_channels=1)  
-            print(model)
+            # print(model)
 
         trained_model, losses = self.train_model(model, dataloader, num_epochs=self.number_epoch, learning_rate=self.learning_rate)
 
         torch.save(trained_model, self.model_output_path)
 
-        deeplabv3_loss = losses
         epochs = list(range(1,self.number_epoch+1))
-
-
         plt.figure(figsize=(10, 6))
-        plt.plot(epochs, deeplabv3_loss, label='DeepLabV3 Loss', color='blue')
+        plt.plot(epochs, losses, label='DeepLabV3 Loss', color='blue')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.title('Loss vs Epoch')
@@ -356,22 +431,7 @@ class deepLabV3:
 
 
 
-### UNET MODEL 
-
-# Augmentation Of Images and masks
- 
-def get_training_augmentation():
-    return A.Compose([
-        A.Resize(1024, 1024),
-        A.HorizontalFlip(p=0.5),
-        A.VerticalFlip(p=0.5),
-        A.RandomRotate90(p=0.5),
-        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.1, rotate_limit=30, p=0.5),
-        A.RandomBrightnessContrast(p=0.3),
-        ToTensorV2(transpose_mask=True)
-    ])
-
- 
+### UNET MODEL  
 # Dataset for UNET Model
 class RooftopDataset(Dataset):
     def __init__(self, root, image_folder="images", mask_folder="masks", transform=None):
@@ -393,6 +453,7 @@ class RooftopDataset(Dataset):
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = image.astype(np.uint8)
+        image = image/255.0
 
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         mask = mask.astype(np.float32) / 255.0
@@ -495,21 +556,22 @@ class UnetTrain:
             for images, masks in train_loader:
                 images, masks = images.to(self.device), masks.to(self.device)  # Ensure correct shape [B, 1, H, W]
                 ## masks shape
-                print(masks.size())
+                # print(masks.size())
                 
                 optimizer.zero_grad()
                 outputs = model(images)
                 # outputs = outputs.squeeze()
                 # print(torch.unique(outputs))
-                print("output masks shape is : ",outputs.size())
+                # print("output masks shape is : ",outputs.size())
                 loss = criterion(outputs, masks)
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.item()
 
-                print(loss)
+                # print(loss)
             
             print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss/len(train_loader):.4f}")
+            print(epoch_loss/len(train_loader))
             losses.append(epoch_loss/len(train_loader))
         
         torch.save(model.state_dict(), self.model_output_path)        
@@ -527,6 +589,8 @@ class UnetTrain:
         # data_iter = iter(train_loader)
         # print(data_iter)
         # images_dummy, masks_dummy = next(data_iter)
+        # print(torch.unique(images_dummy))
+        # print(torch.unique(masks_dummy))
         # print(images_dummy.shape, masks_dummy.shape)
         # print(train_loader[0])
 
@@ -543,68 +607,72 @@ class UnetTrain:
 
         criterion = nn.BCELoss()
         optimizer = optim.Adam(model.parameters(), lr=self.learning_rate)
-        
+        print("training start.")
         loss = self.train(model, train_loader, criterion= criterion, optimizer=optimizer,epochs=self.number_epoch)
-        
-        # unet_loss = loss
+        print("training end.")
+        unet_loss = loss
 
-        # epochs = list(range(1,51))
-        # plt.figure(figsize=(10, 6))
-        # plt.plot(epochs, unet_loss, label='UNet Loss', color='red')
-        # plt.xlabel('Epoch')
-        # plt.ylabel('Loss')
-        # plt.title('Loss vs Epoch')
-        # plt.legend()
-        # plt.grid(True)
-        # plt.savefig(self.image_output_path)
-        # plt.show()
+        epochs = list(range(1,51))
+        plt.figure(figsize=(10, 6))
+        plt.plot(epochs, unet_loss, label='UNet Loss', color='red')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Loss vs Epoch')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(self.image_output_path)
+        plt.show()
 
 
 
 if __name__ == "__main__":
 
-    print("Done")
-    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/train" 
-    # model_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplab_rooftop_full_50_indian_usa.pth"
-    # image_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplabv3_loss_vs_epochs_usa.png"
-    # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/BaseLineModels/deeplabv3/deeplab_rooftop_full_50.pth"
+    # print("Done")
+    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/train" 
+    # # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/BaseLineModels/deeplabv3/deeplab_rooftop_full_50.pth"
+    # model_path = ""
     # num_epochs= 50
     # batch_size = 2
     # learning_rate = 1e-4
+    # is_transform = True
+    # model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplabv3_lr_{learning_rate}_num_epoch_{num_epochs}_medium_gandhinagar_model_1.pth"
+    # image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplabv3_lr_{learning_rate}_num_epoch_{num_epochs}_medium_gandhinagar_model_1.png"
     
     
-    # deeplabv3_model = deepLabV3(data_dir=data_dir, model_output_path=model_output_path, image_output_path=image_output_path, model_path= model_path,num_epochs=num_epochs, batch_size=batch_size, learning_rate=learning_rate)
+    # deeplabv3_model = deepLabV3(data_dir=data_dir, model_output_path=model_output_path, image_output_path=image_output_path, model_path= model_path,num_epochs=num_epochs, batch_size=batch_size, learning_rate=learning_rate, is_transform= is_transform)
 
-    ## start training 
+    # # start training 
     # deeplabv3_model.deeplabv3_train()
 
 
 
-    data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/train" 
-    model_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_medium_gandhinagar_model_1.pth"
-    image_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_medium_gandhinagar_model_1_loss_epochs.png"
-    # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_rooftop_50_indian_usa.pth"
-    model_path = ""
-    num_epochs= 50
-    batch_size = 2
-    learning_rate = 1e-4
+    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/train" 
+    # model_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_medium_gandhinagar_model_1.pth"
+    # image_output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_medium_gandhinagar_model_1_loss_epochs.png"
+    # # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_rooftop_50_indian_usa.pth"
+    # model_path = ""
+    # num_epochs= 50
+    # batch_size = 2 
+    # learning_rate = 1e-4
 
-    unet = UnetTrain(root_dir=data_dir, learning_rate=learning_rate,number_epoch=num_epochs,image_output_path=image_output_path, model_output_path=model_output_path, model_path=model_path)
-    unet.train_unet()
-
-
+    # unet = UnetTrain(root_dir=data_dir, learning_rate=learning_rate,number_epoch=num_epochs,image_output_path=image_output_path, model_output_path=model_output_path, model_path=model_path)
+    # unet.train_unet()
 
 
-    # root_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/train"
-    # batch_size=4
-    # num_classes = 2
-    # learning_rate = 0.0001
-    # number_epochs=50
-    # model_output_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskrcnn_model_scratch.pth"
-    # image_output_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/loss_image_maskrcnn.png"
-    # num_workers=2
+
+
+    root_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/train"
+    batch_size=4
+    num_classes = 2
+    learning_rate = 0.0001
+    num_epochs=50
+    augmentation = False
+    model_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskRCNN_lr_{learning_rate}_num_epoch_{num_epochs}_medium_gandhinagar_model_2.pth"
+    image_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskRCNN_lr_{learning_rate}_num_epoch_{num_epochs}_medium_gandhinagar_model_2.png"
+    num_workers=2
     # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/BaseLineModels/Maksed_RCNN/mask_rcnn_epoch_50_full.pth"
+    model_path = ""
 
-    # mask_rcnn_model = maskRCNN(batch_size=batch_size, num_classes = num_classes, learning_rate = learning_rate, number_epochs=number_epochs, data_dir =root_dir, model_output_path=model_output_path, image_output_path=image_output_path, num_workers=num_workers)
+    mask_rcnn_model = maskRCNN(batch_size=batch_size, num_classes = num_classes, learning_rate = learning_rate, augmentation=augmentation, number_epochs=num_epochs, data_dir =root_dir, model_output_path=model_output_path, image_output_path=image_output_path, num_workers=num_workers)
 
-    # mask_rcnn_model.train()
+    mask_rcnn_model.train()
