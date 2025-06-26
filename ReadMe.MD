@@ -1,6 +1,6 @@
 # ☀️ High-Precision Rooftop Detection in Urban Aerial Imagery
 
-This repository implements a **hybrid detection–segmentation pipeline** for high-precision rooftop detection from aerial imagery. It integrates **state-of-the-art object detection models** (YOLOv10/11/12, DETR) with the **Segment Anything Model (SAM)** to guide segmentation. Additionally, baseline semantic and instance segmentation models (U-Net, DeepLabV3+, Mask R-CNN, SAM) are benchmarked for comparison.
+This repository implements a **hybrid detection–segmentation pipeline** for high-precision rooftop detection from aerial imagery. It integrates **state-of-the-art object detection models** (YOLOv10/11/12, DETR) with the **Segment Anything Model (SAM)** to guide segmentation. Additionally, baseline semantic and instance segmentation models (U-Net, DeepLabV3+, Mask R-CNN) are benchmarked for comparison.
 
 ---
 
