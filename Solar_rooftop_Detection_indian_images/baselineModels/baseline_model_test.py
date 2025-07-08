@@ -84,7 +84,7 @@ class RooftopDatasetUNET(Dataset):
             image = self.transform(image)
             mask = transforms.ToTensor()(mask).unsqueeze(0)  # Ensure mask shape [1, H, W]
         
-        return image, mask.squeeze(0)  # Ensure mask shape [H, W]
+        return image, mask.squeeze(0), (img_path,mask_path)  # Ensure mask shape [H, W]
     
 
 
@@ -113,7 +113,8 @@ class SegmentationDatasetDeeplabV3(Dataset):
         if self.transforms:
             image = self.transforms(image)
             mask = transforms.ToTensor()(mask)  # Mask to tensor (0-1 range)
-        return {"image": image, "mask": mask}
+        return {"image": image, "mask": mask, "image_name": img_path, "mask_name":mask_path}
+    
 
 
 
@@ -207,7 +208,7 @@ class RooftopDatasetMaskRCNN(Dataset):
             img, target = self.transforms(img, target)
 
 
-        return img, target
+        return img, target,  (img_path,mask_path) 
 
     def __len__(self):
         return len(self.imgs)
@@ -226,6 +227,11 @@ class test_model:
         self.avg_accuracy_txt = avg_accuracy_txt
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        ## check if directory is exits or not 
+        # os.makedirs(self.output_path, exist_ok=True)
+        # os.makedirs(self.avg_accuracy_txt, exist_ok=True)
+        
     
 
     def evaluate_unet_model(self, model, val_loader):
@@ -233,8 +239,10 @@ class test_model:
         result_data = []
         # iou_scores = []
         with torch.no_grad():
-            for images, masks in val_loader:
+            for images, masks, filenames in val_loader:
                 images, masks = images.to(self.device), masks.to(self.device)
+                # print(images.shape)
+                # print(masks.shape)
                 # print(torch.unique(images))
                 outputs = model(images)
 
@@ -243,10 +251,15 @@ class test_model:
                 # print(torch.unique(outputs))
                 # print(outputs.shape)
                 
-                preds = (outputs > 0.2).float()
+                preds = (outputs > 0.5).float()
                 # print(torch.unique(preds))
-                
-                one  = preds[0].squeeze(0).cpu().numpy()
+                for i in range(images.size(0)):
+                    metrics = compute_metrics(preds[i], masks[i])
+                    # print(metrics)
+                    result_data.append([filenames[0][i],filenames[1][i]] + metrics)
+
+                # print(result_data)
+                # one  = preds[0].squeeze(0).cpu().numpy()
                 # print(np.unique(one))
                 # plt.imshow(one, cmap="gray")
                 # plt.tight_layout()
@@ -257,8 +270,8 @@ class test_model:
                 # plt.tight_layout()
                 # plt.show()
 
-                metrics = compute_metrics(preds, masks)
-                result_data.append(metrics)
+                # metrics = compute_metrics(preds, masks)
+                # result_data.append(metrics)
             
         return result_data
 
@@ -266,20 +279,23 @@ class test_model:
         my_model = UNet()
         my_model.to(device=self.device)
         my_model.load_state_dict(torch.load(self.model_path))
+        
         # print(my_model)
+        
         val_dataset = RooftopDatasetUNET(self.test_data_dir)
         val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 
         accuracy_result = self.evaluate_unet_model(my_model, val_loader)
+        
         # print(accuracy_result)
 
         os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
         
-        metrics_df = pd.DataFrame(accuracy_result, columns=["pixel_iou", "pixel_dice", "pixel_accuracy", "pixel_precision", "pixel_recall", "region_iou", "region_dice", "region_precision", "region_recall", "region_success_accuracy"])
+        metrics_df = pd.DataFrame(accuracy_result, columns=["image_path", "mask_path", "pixel_iou", "pixel_dice", "pixel_accuracy", "pixel_precision", "pixel_recall", "region_iou", "region_dice", "region_precision", "region_recall", "region_success_accuracy"])
         metrics_df.to_csv(self.output_path, index=False)
 
-        avg_metrics = metrics_df.mean()
-        print(avg_metrics)
+        avg_metrics = metrics_df.iloc[:,2:].mean()
+        # print(avg_metrics)
 
         os.makedirs(os.path.dirname(self.avg_accuracy_txt), exist_ok=True)
 
@@ -312,6 +328,12 @@ class test_model:
             for sample in tqdm(dataloader):
                 inputs = sample["image"].to(device)
                 masks = sample["mask"].to(device)
+                image_name = sample["image_name"]
+                mask_name = sample["mask_name"]
+                # print(image_name)
+                # print(mask_name)
+                
+            
                 outputs = model(inputs)["out"]  # Shape: (batch, 1, H, W)
                 loss = criterion(outputs, masks)
                 total_loss += loss.item() * inputs.size(0)
@@ -326,7 +348,7 @@ class test_model:
 
                 # Compute metrics per batch
                 for i in range(inputs.size(0)):
-                    all_matrics.append(compute_metrics(preds_[i], masks_[i]))
+                    all_matrics.append([image_name[i],mask_name[i]]+compute_metrics(preds_[i], masks_[i]))
                     # Compute IoU and F1 score
                     total_iou += iou_score(masks[i], preds[i])
                     total_f1 += f1_score(masks[i], preds[i])
@@ -338,13 +360,12 @@ class test_model:
         
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        df = pd.DataFrame(all_matrics, columns=["pixel_iou", "pixel_dice", "pixel_accuracy", "pixel_precision", "pixel_recall","region_iou", "region_dice", "region_precision", "region_recall", "region_success_accuracy"])
+        df = pd.DataFrame(all_matrics, columns=["image_path", "mask_path", "pixel_iou", "pixel_dice", "pixel_accuracy", "pixel_precision", "pixel_recall","region_iou", "region_dice", "region_precision", "region_recall", "region_success_accuracy"])
 
         df.to_csv(output_path, index=False)
 
-        avg_metrics = df.mean()
+        avg_metrics = df.iloc[:,2:].mean()
         print(avg_metrics)
-
 
         os.makedirs(os.path.dirname(avg_accuracy_txt), exist_ok=True)
 
@@ -367,6 +388,11 @@ class test_model:
         model = torch.load(self.model_path, weights_only=False)
 
         self.evaluate_model_deeplabv3(model, dataloader,  self.output_path, self.avg_accuracy_txt)
+        
+        
+        
+        
+        
 
     
     def calculate_maskRcnn_iou(self,mask1, mask2):
@@ -401,8 +427,8 @@ class test_model:
         
         os.makedirs(os.path.dirname(output_csv_path), exist_ok=True)
         os.makedirs(os.path.dirname(output_txt_path), exist_ok=True)
-        print(output_csv_path)
-        print(output_txt_path)
+        # print(output_csv_path)
+        # print(output_txt_path)
 
         
         all_tp_boxes, all_fp_boxes, all_fn_boxes = 0, 0, 0
@@ -412,7 +438,7 @@ class test_model:
         
         with torch.no_grad():   
             
-            for batch_idx, (images, targets) in enumerate(data_loader):
+            for batch_idx, (images, targets, paths) in enumerate(data_loader):
             
                 # print(f"\nProcessing batch {batch_idx + 1}/{len(data_loader)}...")
                 # print(f"Number of images in batch: {len(images)}")
@@ -432,18 +458,23 @@ class test_model:
                 # print(f"Loss: {loss}")
                 # break
                 # Process each image in the batch
-                
-                for output, target in zip(outputs, targets):
+                # print(len(images))
+                # print(len(paths))
+            
+                for output, target, path in zip(outputs, targets, paths):
                 
                     # Ground truth
                     gt_boxes = target["boxes"].cpu().numpy()  # [N_gt, 4]
+
                     gt_masks = target["masks"].cpu().numpy()  # [N_gt, H, W]
+
                     gt_labels = target["labels"].cpu().numpy()  # [N_gt]
 
+                    
                     # Predictions
                     pred_boxes = output["boxes"].cpu().numpy()  # [N_pred, 4]
                     pred_scores = output["scores"].cpu().numpy()  # [N_pred]
-                    pred_masks = output["masks"].cpu().numpy().squeeze(1)  # [N_pred, 1, H, W] -> [N_pred, H, W]
+                    pred_masks = output["masks"].squeeze(1).cpu().numpy()  # [N_pred, 1, H, W] -> [N_pred, H, W]
                     pred_labels = output["labels"].cpu().numpy()  # [N_pred]
 
                     # Filter predictions by confidence threshold
@@ -452,6 +483,10 @@ class test_model:
                     pred_scores = pred_scores[mask]
                     pred_masks = pred_masks[mask]
                     pred_labels = pred_labels[mask]
+                    
+                    # print(gt_masks.shape)
+                    # print(pred_masks.shape)
+                
 
                     # Evaluate bounding boxes
                     matched_gt = set()
@@ -495,8 +530,16 @@ class test_model:
                             matched_gt_masks.add(best_gt_idx)
                             # Compute metrics for this true positive pair
                             
-                            pred_mask_tensor = torch.from_numpy((pred_mask > 0.5).astype(np.uint8))
+                            pred_mask_tensor = torch.from_numpy((pred_mask).astype(np.uint8))
                             gt_mask_tensor = torch.from_numpy(gt_mask.astype(np.uint8))
+
+                            # print("predicted mask")
+                            # print(pred_mask_tensor.size())
+                            # print(torch.unique(pred_mask_tensor))
+                            # print("gorund truth mask")
+                            # print(gt_mask_tensor.size())
+                            # print(torch.unique(gt_mask_tensor))
+
                             metrics = compute_metrics(pred_mask_tensor, gt_mask_tensor)
                             M.append(metrics)
                         else:
@@ -506,19 +549,20 @@ class test_model:
                     all_tp_masks += tp_masks
                     all_fp_masks += fp_masks
                     all_fn_masks += fn_masks
-
+                    # print(M)
                     M_mean = np.mean(M, axis=0) if M else [0] * 10
                     # print(M_mean)
-                    all_metrics.append(M_mean)
+                    # print(len(M_mean))
+                    # print(M_mean.shape)
+                    all_metrics.append([path[0], path[1]] + list(M_mean))
 
-        
-        matrix_df = pd.DataFrame(all_metrics, columns=["pixel_iou", "pixel_dice", "pixel_accuracy", "pixel_precision", "pixel_recall",
+        matrix_df = pd.DataFrame(all_metrics, columns=["image_path", "mask_path","pixel_iou", "pixel_dice", "pixel_accuracy", "pixel_precision", "pixel_recall",
                                                     "region_iou", "region_dice", "region_precision", "region_recall", "region_success_accuracy"])     
-        print(matrix_df.head(5))
+        # print(matrix_df.head(5))
         matrix_df.to_csv(output_csv_path, index=False) 
         
         # Compute average metrics for true positive mask pairs
-        avg_metrics = matrix_df.mean()
+        avg_metrics = matrix_df.iloc[:,2:].mean()
         print("Average :")
         print(avg_metrics)
             
@@ -532,6 +576,7 @@ class test_model:
         precision_masks = all_tp_masks / (all_tp_masks + all_fp_masks) if (all_tp_masks + all_fp_masks) > 0 else 0
         recall_masks = all_tp_masks / (all_tp_masks + all_fn_masks) if (all_tp_masks + all_fn_masks) > 0 else 0
         f1_masks = 2 * (precision_masks * recall_masks) / (precision_masks + recall_masks) if (precision_masks + recall_masks) > 0 else 0
+        
         
         print(output_txt_path)
         with open(output_txt_path, "w") as f:
@@ -554,7 +599,8 @@ class test_model:
         def custom_collate_fn(batch):
             images = [item[0] for item in batch]
             targets = [item[1] for item in batch]
-            return images, targets
+            paths   = [item[2] for item in batch]
+            return images, targets, paths
 
         test_dataset = RooftopDatasetMaskRCNN(self.test_data_dir)
         
@@ -572,31 +618,56 @@ class test_model:
 
 if __name__ == "__main__":
     print("Dhruv Panchal")
+    
+
+    # UNET
+    ## modrate dataset
+    test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Easy_indian/test"
+
+
+    ## USA dataset
+    # test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Arial_validation_images"
+
+
+    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_without_augmentation_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.pth"
+    
+    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.csv"
+    
+    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.txt"
+
+    model_testing = test_model(model_path, output_path, test_data_dir, avg_accuracy_txt)
+    model_testing.test_unet_model()
+    
+    print("UNET DONE")
+
+
+    # DEEPLABv3
 
     # test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/test"
-    # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_medium_gandhinagar_model_1.pth"
-    # output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/result_unet_medium_gandhinagar_model_1.csv"
-    # avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/avg_metrics_unet_medium_gandhinagar_model_1.txt"
+    
+    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplabv3_without_augmentation_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.pth"
+    
+    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.csv"
+    
+    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.txt"
 
-    # model_testing = test_model(model_path, output_path, test_data_dir, avg_accuracy_txt)
-    # model_testing.test_unet_model()
+    model_testing = test_model(model_path, output_path, test_data_dir, avg_accuracy_txt)
+    model_testing.test_deeplabv3_model()
+
+    print("DEEPLAB V3 DONE")
 
 
+    # MASKRcnn
 
     # test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/test"
-    # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplabv3_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.pth"
-    # output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplabv3_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.csv"
-    # avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplabv3_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.txt"
-
-    # model_testing = test_model(model_path, output_path, test_data_dir, avg_accuracy_txt)
-    # model_testing.test_deeplabv3_model()
-
-
-
-    test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/test"
-    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskRCNN_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.pth"
-    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskRCNN_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.csv"
-    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskRCNN_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.txt"
+    
+    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskRCNN_without_augmentation_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.pth"
+    
+    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.csv"
+    
+    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.txt"
 
     model_testing = test_model(model_path, output_path, test_data_dir, avg_accuracy_txt)
     model_testing.test_mask_rcnn_model()
+    
+    print("Mask RCNN DONE")

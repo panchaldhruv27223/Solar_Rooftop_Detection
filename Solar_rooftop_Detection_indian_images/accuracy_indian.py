@@ -46,7 +46,7 @@ def compute_metrics(pred_mask, gt_mask):
     region_success_accuracy = 1.0 if region_iou > 0.5 else 0.0  # Binary detection success (IoU > 0.5)
 
     # Return all metrics
-    return [pixel_iou, pixel_dice, pixel_accuracy, pixel_precision, pixel_recall, 
+    return [float(pixel_iou), pixel_dice, pixel_accuracy, pixel_precision, pixel_recall, 
             region_iou, region_dice, region_precision, region_recall, region_success_accuracy]
 
 if __name__ == "__main__":
