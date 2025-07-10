@@ -123,19 +123,18 @@ class YOLOSAM_Evaluator:
 if __name__ == "__main__":
 
     evaluator = YOLOSAM_Evaluator(
-        
+
         yolo_model_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/indian_moderate_weights/yolov10_moderate.pt",
-        
-        sam_model_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/only_moderate_SAM_scratch_with_aug_on all data_version_2/Final_Model/SAM_final_04_07_2025.pth",
-        
-        data_folder="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/test/images",
-        
-        mask_folder="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/gandhinagar_dataset/test/masks",
-        
-        output_csv_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/yolo_sam_moderate/yolov10_only_moderate_SAM_scratch_with_aug_on_all_data_version_2.csv",
-        
-        output_txt_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/yolo_sam_moderate/yolov10_only_moderate_SAM_scratch_with_aug_on_all_data_version_2.txt"
-        
-    )
+
+        sam_model_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Moderate_SAM_without_aug_on_all_data_version_1/Final_Model/SAM_final_09_07_2025.pth",
+
+        data_folder="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final-moderate/original/test/images",
+
+        mask_folder="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final-moderate/original/test/masks",
+
+        output_csv_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/yolo_sam_moderate/yolov10_Moderate_SAM_without_aug_on_all_data_version_1.csv",
+
+        output_txt_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/yolo_sam_moderate/yolov10_Moderate_SAM_without_aug_on_all_data_version_1.txt"
+)
 
     evaluator.run()

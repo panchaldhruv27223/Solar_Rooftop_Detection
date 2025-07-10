@@ -622,18 +622,18 @@ if __name__ == "__main__":
 
     # UNET
     ## modrate dataset
-    test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Easy_indian/test"
+    test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final-moderate/original/test"
 
 
     ## USA dataset
     # test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Arial_validation_images"
 
 
-    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_without_augmentation_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.pth"
+    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/moderate/unet_without_augmentation_moderate_model_1.pth"
     
-    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.csv"
+    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/moderate/train_moderate_test_moderate_without_augmentation_full_data.csv"
     
-    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.txt"
+    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/moderate/train_moderate_test_moderate_without_augmentation_full_data.txt"
 
     model_testing = test_model(model_path, output_path, test_data_dir, avg_accuracy_txt)
     model_testing.test_unet_model()
@@ -645,27 +645,26 @@ if __name__ == "__main__":
 
     # test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/test"
     
-    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/deeplabv3_without_augmentation_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.pth"
+    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/moderate/deeplabv3_without_augmentation_moderate_model_1.pth"
     
-    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.csv"
+    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/moderate/train_on_moderate_test_moderate_without_augmentation_full_data.csv"
     
-    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.txt"
+    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/moderate/train_on_moderate_test_moderate_without_augmentation_full_data.txt"
 
     model_testing = test_model(model_path, output_path, test_data_dir, avg_accuracy_txt)
     model_testing.test_deeplabv3_model()
 
     print("DEEPLAB V3 DONE")
 
-
     # MASKRcnn
 
     # test_data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/test"
     
-    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/maskRCNN_without_augmentation_lr_0.0001_num_epoch_50_medium_gandhinagar_model_1.pth"
+    model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/moderate/maskRCNN_without_augmentation_moderate_model_1.pth"
     
-    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.csv"
+    output_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/moderate/train_on_moderate_test_moderate_without_augmentation_full_data.csv"
     
-    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/cross_model/train_on_moderate_test_easy_without_augmentation_full_data.txt"
+    avg_accuracy_txt = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/moderate/train_on_moderate_test_moderate_without_augmentation_full_data.txt"
 
     model_testing = test_model(model_path, output_path, test_data_dir, avg_accuracy_txt)
     model_testing.test_mask_rcnn_model()

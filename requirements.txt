@@ -16,4 +16,5 @@ monai
 scikit-learn
 ultralytics
 segment-geospatial
-leafmap
+ultralytics @ git+https://github.com/sunsmarterjie/yolov12@51901136772609c36df65cec1131d54b4f1a44df
+fire

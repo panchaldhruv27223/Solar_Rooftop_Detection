@@ -1,0 +1,11 @@
+Average Metrics:
+pixel_iou: 0.7060
+pixel_dice: 0.8199
+pixel_accuracy: 0.9183
+pixel_precision: 0.8717
+pixel_recall: 0.7842
+region_iou: 0.7060
+region_dice: 0.8199
+region_precision: 0.8717
+region_recall: 0.7842
+region_success_accuracy: 0.9100

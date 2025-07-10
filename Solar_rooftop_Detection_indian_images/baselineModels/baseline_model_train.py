@@ -651,9 +651,9 @@ if __name__ == "__main__":
     num_epochs= 50
     batch_size = 2
     learning_rate = 1e-4
-    is_transform = True
-    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/moderate/deeplabv3_with_augmentation_moderate_model_1.pth"
-    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/moderate/deeplabv3_with_augmentation_moderate_model_1.png"
+    is_transform = False
+    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/moderate/deeplabv3_without_augmentation_moderate_model_1.pth"
+    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/moderate/deeplabv3_without_augmentation_moderate_model_1.png"
     
     
     deeplabv3_model = deepLabV3(data_dir=data_dir, model_output_path=model_output_path, image_output_path=image_output_path, model_path= model_path,num_epochs=num_epochs, batch_size=batch_size, learning_rate=learning_rate, is_transform= is_transform)
@@ -670,9 +670,9 @@ if __name__ == "__main__":
     num_epochs= 50
     batch_size = 2 
     learning_rate = 1e-4
-    is_transform = True
-    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/moderate/unet_with_augmentation_moderate_model_1.pth"
-    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/moderate/unet_with_augmentation_moderate_model_1.png"
+    is_transform = False
+    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/moderate/unet_without_augmentation_moderate_model_1.pth"
+    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/moderate/unet_without_augmentation_moderate_model_1.png"
 
     unet = UnetTrain(root_dir=data_dir, is_transform = is_transform, learning_rate=learning_rate,number_epoch=num_epochs,image_output_path=image_output_path, model_output_path=model_output_path, model_path=model_path)
     unet.train_unet()
@@ -686,13 +686,13 @@ if __name__ == "__main__":
     num_classes = 2
     learning_rate = 1e-4
     num_epochs=50
-    augmentation = True
+    augmentation = False
     num_workers=2
     # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/BaseLineModels/Maksed_RCNN/mask_rcnn_epoch_50_full.pth"
     model_path = ""
     
-    model_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/moderate/maskRCNN_with_augmentation_moderate_model_1.pth"
-    image_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/moderate/maskRCNN_with_augmentation_moderate_model_1.png"
+    model_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/moderate/maskRCNN_without_augmentation_moderate_model_1.pth"
+    image_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/moderate/maskRCNN_without_augmentation_moderate_model_1.png"
 
     mask_rcnn_model = maskRCNN(batch_size=batch_size, num_classes = num_classes, learning_rate = learning_rate, augmentation=augmentation, number_epochs=num_epochs, data_dir = data_dir, model_output_path=model_output_path, image_output_path=image_output_path, num_workers=num_workers)
 
