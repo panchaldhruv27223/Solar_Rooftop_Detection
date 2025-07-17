@@ -22,6 +22,8 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
+import itertools
+import optuna
 
 import sys
 current_dir = os.path.dirname(__file__)
@@ -160,7 +162,7 @@ class RooftopDatasetMaskRCNN(Dataset):
 # Mask RCNN model.
 
 class maskRCNN:
-    def __init__(self, batch_size=4, num_classes = 2, learning_rate = 0.0001, augmentation=True, number_epochs=50, data_dir :str ="", model_output_path : str="", image_output_path : str="",  model_path : str ="", num_workers=2):
+    def __init__(self, batch_size=4, num_classes = 2, learning_rate = 0.0001, augmentation=True, number_epochs=50, optimizer_name= "adam", weight_decay= 0.0,data_dir :str ="", model_output_path : str="", image_output_path : str="",  model_path : str ="", num_workers=2):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.num_classes = num_classes
@@ -173,7 +175,8 @@ class maskRCNN:
         self.model_path = model_path
         self.model_output_path = model_output_path
         self.image_output_path = image_output_path
-
+        self.optimizer_name = optimizer_name
+        self.weight_decay = weight_decay
 
     def get_model_instance_segmentation(self, num_classes=2):  # Background (0) + Rooftop (1)
         model = maskrcnn_resnet50_fpn(weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT)
@@ -250,9 +253,13 @@ class maskRCNN:
             model.to(self.device)
             model.train()
 
-
-        optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
-
+        if self.optimizer_name == "adam":
+            optimizer = optim.Adam(model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        elif self.optimizer_name == "sgd":
+            optimizer = optim.SGD(model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay, momentum=0.9)
+        else:
+            raise ValueError("Unsupported optimizer")
+        
         loss = self.train_model(model, data_loader, optimizer, self.device, num_epochs=self.num_epochs)
         os.makedirs(os.path.dirname(self.model_output_path), exist_ok=True)
         torch.save(model, self.model_output_path)
@@ -272,6 +279,8 @@ class maskRCNN:
         plt.savefig(self.image_output_path)
         plt.tight_layout()
         # plt.show()
+        
+        return sum(loss)/self.num_epochs
 
 
     
@@ -330,7 +339,7 @@ class SegmentationDataset(Dataset):
 ## deeplabv3 model
 class deepLabV3:
 
-    def __init__(self, data_dir :str , model_output_path : str, image_output_path : str,  model_path : str ="", num_epochs : int = 50, batch_size :int = 2, learning_rate : float = 1e-4, is_transform=False):
+    def __init__(self, data_dir :str , model_output_path : str, image_output_path : str,  model_path : str ="", num_epochs : int = 50, batch_size :int = 2, learning_rate : float = 1e-4, optimizer_name="adam", weight_decay=0 , is_transform=False):
         self.data_dir = data_dir
         self.model_output_path = model_output_path
         self.image_output_path = image_output_path
@@ -339,13 +348,20 @@ class deepLabV3:
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.is_transform = is_transform
+        self.optimizer_name = optimizer_name
+        self.weight_decay = weight_decay
 
 
     def train_model(self, model, dataloader, num_epochs=50, learning_rate = 1e-4):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         criterion = torch.nn.BCEWithLogitsLoss()  # For binary segmentation
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        
+        if self.optimizer_name == "adam":
+            optimizer = optim.Adam(model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        elif self.optimizer_name == "sgd":
+            optimizer = optim.SGD(model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay, momentum=0.9)
+            
         loss_list = []
         model.train()  # Set model to training mode
         for epoch in range(num_epochs):
@@ -389,7 +405,7 @@ class deepLabV3:
             transform = transforms.Compose([
             transforms.Resize((1024, 1024)),
             transforms.ToTensor()])
-        dataset = SegmentationDataset(self.data_dir, is_transform=is_transform, transforms= transform)
+        dataset = SegmentationDataset(self.data_dir, is_transform=self.is_transform, transforms= transform)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
         # iter_data = iter(dataloader)
@@ -423,7 +439,8 @@ class deepLabV3:
         plt.savefig(self.image_output_path)
         plt.tight_layout()
         # plt.show()
-            
+        
+        return sum(losses)/self.number_epoch
 
 
 
@@ -540,7 +557,7 @@ class UNet(nn.Module):
     
 
 class UnetTrain:
-    def __init__(self, root_dir, is_transform, learning_rate=1e-4, number_epoch=50, image_output_path="", model_output_path="", model_path=""):
+    def __init__(self, root_dir, is_transform, learning_rate=1e-4, number_epoch=50, batch_size=4,optimizer_name="adam", weight_decay=0 ,image_output_path="", model_output_path="", model_path=""):
         
         self.root_dir = root_dir
         self.learning_rate = learning_rate
@@ -549,6 +566,10 @@ class UnetTrain:
         self.model_output_path = model_output_path
         self.model_path = model_path
         self.is_transform = is_transform
+        self.batch_size = batch_size
+        self.optimizer_name = optimizer_name
+        self.weight_decay = weight_decay
+        
         if is_transform:
             self.transform = get_training_augmentation()
         else:
@@ -600,7 +621,7 @@ class UnetTrain:
     def train_unet(self):
         # Load datasets
         train_dataset = RooftopDataset(self.root_dir, image_folder="images", mask_folder="masks", is_transform = self.is_transform, transform=self.transform)
-        train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, pin_memory=True)
 
         # print(train_loader)
         # data_iter = iter(train_loader)
@@ -623,7 +644,12 @@ class UnetTrain:
         model = model.to(self.device)
 
         criterion = nn.BCELoss()
-        optimizer = optim.Adam(model.parameters(), lr=self.learning_rate)
+        if self.optimizer_name == "adam":
+            optimizer = optim.Adam(model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        elif self.optimizer_name == "sgd":
+            optimizer = optim.SGD(model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay, momentum=0.9)
+        else:
+            raise ValueError("Unsupported optimizer")
         print("training start.")
         loss = self.train(model, train_loader, criterion= criterion, optimizer=optimizer,epochs=self.number_epoch)
         print("training end.")
@@ -640,65 +666,194 @@ class UnetTrain:
         plt.savefig(self.image_output_path)
         # plt.show()
 
+        return sum(unet_loss)/self.number_epoch
 
 
 if __name__ == "__main__":
+    
+    # param_grid = {
+    #     "batch_size": [2, 4],
+    #     "learning_rate": [1e-2, 1e-3, 1e-4],
+    #     "number_epoch": [30, 50, 80, 100],
+    #     "optimizer": ["adam", "sgd"],
+    #     "weight_decay": [0, 1e-5, 1e-4],
+    # }
+        
+        
+    
+
+    # all_combinations = list(itertools.product(
+    #     param_grid["batch_size"],
+    #     param_grid["learning_rate"],
+    #     param_grid["number_epoch"],
+    #     param_grid["optimizer"],
+    #     param_grid["weight_decay"]
+    # ))
+    
+
+    # print("Start UNET")
+    
+    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final_easy_dataset/original/train"
+
+    # for i, (batch_size, lr, epochs, opt_name, wd) in enumerate(all_combinations):
+    #     model_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/grid_models/unet_model_{i+1}.pth"
+    #     image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/grid_models/unet_loss_plot_{i+1}.png"
+        
+    #     print(f"\n🔍 Grid Search [{i+1}/{len(all_combinations)}] - "
+    #         f"BS={batch_size}, LR={lr}, Epochs={epochs}, Opt={opt_name}, WD={wd}")
+
+    #     unet = UnetTrain(
+    #         root_dir=data_dir,
+    #         is_transform=False,
+    #         learning_rate=lr,
+    #         number_epoch=epochs,
+    #         batch_size=batch_size,
+    #         optimizer_name=opt_name,
+    #         weight_decay=wd,
+    #         image_output_path=image_output_path,
+    #         model_output_path=model_path,
+    #         model_path=""
+    #     )
+        
+    #     unet.train_unet()
+
+
+    # def objective(trial):
+    #     data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final_easy_dataset/original/train"
+
+    #     batch_size = trial.suggest_categorical("batch_size", [2,4,8])
+    #     learning_rate = trial.suggest_loguniform("learning_rate", 1e-4, 1e-3)
+    #     number_epoch = trial.suggest_categorical("number_epoch", [30, 50])
+    #     optimizer_name = trial.suggest_categorical("optimizer", ["adam", "sgd"])
+    #     weight_decay = trial.suggest_loguniform("weight_decay", 1e-6, 1e-3)
+
+    #     model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/Easy_Moderate/unet_without_augmentation_Moderate_plus_Easy_model_1.pth"
+    #     image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/Easy_Moderate/unet_without_augmentation_Moderate_plus_Easy_model_1.png"
+
+    #     unet = UnetTrain(root_dir=data_dir, is_transform = False, learning_rate=learning_rate,number_epoch=number_epoch,batch_size=batch_size,optimizer_name=optimizer_name, weight_decay=weight_decay, image_output_path=image_output_path, model_output_path=model_output_path, model_path="")
+    #     loss = unet.train_unet()
+    #     return loss
+    
+
+    # study = optuna.create_study(direction="minimize")
+    # study.optimize(objective, n_trials=20)
+
+    # print("\nBest Hyperparameters:")
+    # print(study.best_params)
+    
+    # learning_rate = 0.0004188691696239928
+    # number_epoch = 50
+    # batch_size = 2
+    # optimizer_name = "adam"
+    # weight_decay = 1.0816565013623374e-06
+    
+    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final_easy_dataset/original/train"
+    # model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/Easy_finetune/unet_without_augmentation__Easy_model_1.pth"
+    # image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/Easy_finetune/unet_without_augmentation__Easy_model_1.png"
+
+    # unet = UnetTrain(root_dir=data_dir, is_transform = False, learning_rate=learning_rate,number_epoch=number_epoch,batch_size=batch_size,optimizer_name=optimizer_name, weight_decay=weight_decay, image_output_path=image_output_path, model_output_path=model_output_path, model_path="")
+    # loss = unet.train_unet()
+    
+
+
 
     print("Start DeeplabV3")
-    data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final-moderate/original/train" 
-    # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/BaseLineModels/deeplabv3/deeplab_rooftop_full_50.pth"
+
+
+    # def objective(trial):
+    #     data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final_easy_dataset/original/train"
+
+    #     batch_size = trial.suggest_categorical("batch_size", [2])
+    #     learning_rate = trial.suggest_loguniform("learning_rate", 1e-4, 1e-3)
+    #     number_epoch = trial.suggest_categorical("number_epoch", [30, 50])
+    #     optimizer_name = trial.suggest_categorical("optimizer", ["adam", "sgd"])
+    #     weight_decay = trial.suggest_loguniform("weight_decay", 1e-6, 1e-3)
+
+    #     model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/Easy_finetune_optim/deeplabv3_without_augmentation_Easy_model_1.pth"
+    #     image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/Easy_finetune_optim/deeplabv3_without_augmentation_Easy_model_1.png"
+
+    #     deeplabv3_model = deepLabV3(data_dir=data_dir, model_output_path=model_output_path, image_output_path=image_output_path, model_path="",num_epochs=number_epoch, batch_size=batch_size, learning_rate=learning_rate,  optimizer_name=optimizer_name, weight_decay=weight_decay, is_transform= False)
+
+    #     # start training 
+    #     loss = deeplabv3_model.deeplabv3_train()
+    
+    #     return loss
+    
+
+    # study = optuna.create_study(direction="minimize")
+    # study.optimize(objective, n_trials=20)
+
+    # print("\nBest Hyperparameters:")
+    # print(study.best_params)
+
+    data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final_easy_dataset/original/train"
+# Best Hyperparameters:
+# {'batch_size': 2, 'learning_rate': 0.000983405046744849, 'number_epoch': 50, 'optimizer': 'sgd', 'weight_decay': 7.232961079009517e-05}
     model_path = ""
-    num_epochs= 50
+    learning_rate = 0.000983405046744849
+    number_epoch = 50
     batch_size = 2
-    learning_rate = 1e-4
+    optimizer_name = "sgd"
+    weight_decay = 7.232961079009517e-05
     is_transform = False
-    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/moderate/deeplabv3_without_augmentation_moderate_model_1.pth"
-    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/moderate/deeplabv3_without_augmentation_moderate_model_1.png"
+    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/Easy_finetune/deeplabv3_without_augmentation_Easy_model_1.pth"
+    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/Easy_finetune/deeplabv3_without_augmentation_Easy_model_1.png"
     
     
-    deeplabv3_model = deepLabV3(data_dir=data_dir, model_output_path=model_output_path, image_output_path=image_output_path, model_path= model_path,num_epochs=num_epochs, batch_size=batch_size, learning_rate=learning_rate, is_transform= is_transform)
+    deeplabv3_model = deepLabV3(data_dir=data_dir, model_output_path=model_output_path, image_output_path=image_output_path, model_path="",num_epochs=number_epoch, batch_size=batch_size, learning_rate=learning_rate,  optimizer_name=optimizer_name, weight_decay=weight_decay, is_transform= False)
 
     # start training 
     deeplabv3_model.deeplabv3_train()
 
 
-    print("Start UNET")
 
-    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/train" 
-    # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/unet_rooftop_50_indian_usa.pth"
-    model_path = ""
-    num_epochs= 50
-    batch_size = 2 
-    learning_rate = 1e-4
-    is_transform = False
-    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/moderate/unet_without_augmentation_moderate_model_1.pth"
-    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/moderate/unet_without_augmentation_moderate_model_1.png"
-
-    unet = UnetTrain(root_dir=data_dir, is_transform = is_transform, learning_rate=learning_rate,number_epoch=num_epochs,image_output_path=image_output_path, model_output_path=model_output_path, model_path=model_path)
-    unet.train_unet()
+    # print("Start MaskRCNN")
 
 
 
-    print("Start MaskRCNN")
-    
-    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_indian_dataset/train"
-    batch_size=4
-    num_classes = 2
-    learning_rate = 1e-4
-    num_epochs=50
-    augmentation = False
-    num_workers=2
-    # model_path = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/BaseLineModels/Maksed_RCNN/mask_rcnn_epoch_50_full.pth"
-    model_path = ""
-    
-    model_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/moderate/maskRCNN_without_augmentation_moderate_model_1.pth"
-    image_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/moderate/maskRCNN_without_augmentation_moderate_model_1.png"
+    # def objective(trial):
+    #     data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final_easy_dataset/original/train"
+    #     num_classes = 2
+    #     augmentation = False
+    #     num_workers=2
+    #     batch_size = trial.suggest_categorical("batch_size", [2])
+    #     learning_rate = trial.suggest_loguniform("learning_rate", 1e-4, 1e-3)
+    #     number_epoch = trial.suggest_categorical("number_epoch", [30, 50])
+    #     optimizer_name = trial.suggest_categorical("optimizer", ["adam", "sgd"])
+    #     weight_decay = trial.suggest_loguniform("weight_decay", 1e-6, 1e-3)
 
-    mask_rcnn_model = maskRCNN(batch_size=batch_size, num_classes = num_classes, learning_rate = learning_rate, augmentation=augmentation, number_epochs=num_epochs, data_dir = data_dir, model_output_path=model_output_path, image_output_path=image_output_path, num_workers=num_workers)
+    #     model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/Easy_finetune_optim/maskRCNN_without_augmentation_Easy_model_1.pth"
+    #     image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/Easy_finetune_optim/maskRCNN_without_augmentation_Easy_model_1.png"
 
-    mask_rcnn_model.train()
+    #     mask_rcnn_model = maskRCNN(batch_size=batch_size, num_classes = num_classes, learning_rate = learning_rate, augmentation=augmentation, number_epochs=number_epoch, optimizer_name= optimizer_name, weight_decay= weight_decay ,data_dir = data_dir, model_output_path=model_output_path, image_output_path=image_output_path, num_workers=num_workers)
+
+    #     loss = mask_rcnn_model.train()
     
+    #     return loss
     
+
+    # study = optuna.create_study(direction="minimize")
+    # study.optimize(objective, n_trials=20)
+
+    # print("\nBest Hyperparameters:")
+    # print(study.best_params)
+
+    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final_easy_dataset/original/train"
+
     
+    # num_classes = 2
+    # augmentation = False
+    # num_workers=2
+    # model_path = ""
+    # learning_rate = study.best_params["learning_rate"]
+    # number_epoch = study.best_params["number_epoch"]
+    # batch_size = study.best_params["batch_size"]
+    # optimizer_name = study.best_params["optimizer"]
+    # weight_decay = study.best_params["weight_decay"]
     
-    
+    # model_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/Easy_finetune/maskRCNN_without_augmentation_Easy_model_1.pth"
+    # image_output_path=f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/maskrcnn/Easy_finetune/maskRCNN_without_augmentation_Easy_model_1.png"
+
+    # mask_rcnn_model = maskRCNN(batch_size=batch_size, num_classes = num_classes, learning_rate = learning_rate, augmentation=augmentation, number_epochs=number_epoch, optimizer_name= optimizer_name, weight_decay= weight_decay ,data_dir = data_dir, model_output_path=model_output_path, image_output_path=image_output_path, num_workers=num_workers)
+
+    # mask_rcnn_model.train()
