@@ -152,24 +152,27 @@ if __name__ == "__main__":
     evaluator = YOLOSAM_Evaluator(
 
         # yolo_model_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/moderate_weights/yolov11_moderate.pt",
-        
-        yolo_model_path="",    
 
-        sam_model_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Easy_data_for_SAM_E_50_without_aug_version_1/Final_Model/SAM_final_18_07_2025.pth",
+        yolo_model_path="",
+
+        sam_model_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Dense_data_for_SAM_E_70_without_aug_version_1/Final_Model/SAM_final_26_07_2025.pth",
+        
         # sam_model_path= "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Moderate_data_for_SAM_E_50_without_aug_version_1/Final_Model/SAM_final_21_07_2025.pth",
 
         # data_folder="/home/dhruv/Documents/data_creation_for_sam/Moderate_data_SAM/test/images",
         # data_folder = "/home/dhruv/Documents/data_creation_for_sam/Easy_data_SAM/test/images",
-        data_folder = "/home/dhruv/Documents/data_creation_for_sam/Dense_data_SAM/test/images",
+        
+        data_folder = "/home/dhruv/Documents/data_creation_for_sam/Moderate_data_SAM/test/images",
 
         # mask_folder="/home/dhruv/Documents/data_creation_for_sam/Moderate_data_SAM/test/masks",
         # mask_folder="/home/dhruv/Documents/data_creation_for_sam/Easy_data_SAM/test/masks",
-        mask_folder = "/home/dhruv/Documents/data_creation_for_sam/Dense_data_SAM/test/masks",
-        
-        output_csv_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Only_SAM_EASY/train_Easy_test_DENSE_data_for_SAM_E_50_without_aug_version_1.csv",
-        
-        output_txt_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Only_SAM_EASY/train_Easy_test_DENSE_data_for_SAM_E_50_without_aug_version_1.txt"
-    
+
+        mask_folder = "/home/dhruv/Documents/data_creation_for_sam/Moderate_data_SAM/test/masks",
+
+        output_csv_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Only_SAM/train_DENSE_test_Moderate_data_for_SAM_E_70_without_aug_version_1.csv",
+
+        output_txt_path="/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/Only_SAM/train_DENSE_test_Moderate_data_for_SAM_E_70_without_aug_version_1.txt"
+
         )
 
     evaluator.run()

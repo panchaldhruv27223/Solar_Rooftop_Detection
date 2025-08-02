@@ -655,7 +655,7 @@ class UnetTrain:
         print("training end.")
         unet_loss = loss
 
-        epochs = list(range(1,51))
+        epochs = list(range(1,self.number_epoch+1))
         plt.figure(figsize=(10, 6))
         plt.plot(epochs, unet_loss, label='UNet Loss', color='red')
         plt.xlabel('Epoch')
@@ -741,18 +741,19 @@ if __name__ == "__main__":
     # print("\nBest Hyperparameters:")
     # print(study.best_params)
     
-    # learning_rate = 0.0004188691696239928
-    # number_epoch = 50
-    # batch_size = 2
-    # optimizer_name = "adam"
-    # weight_decay = 1.0816565013623374e-06
+    learning_rate = 0.0004188691696239928
+    number_epoch = 70
+    batch_size = 2
+    optimizer_name = "adam"
+    weight_decay = 1.0816565013623374e-06
     
-    # data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final_easy_dataset/original/train"
-    # model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/Easy_finetune/unet_without_augmentation__Easy_model_1.pth"
-    # image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/Easy_finetune/unet_without_augmentation__Easy_model_1.png"
+    data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/dense_data/Original/train"
+    
+    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/Easy_finetune/train_dense_unet_without_augmentation_E_70.pth"
+    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/UNET/Easy_finetune/train_dense_unet_without_augmentation_E_70.png"
 
-    # unet = UnetTrain(root_dir=data_dir, is_transform = False, learning_rate=learning_rate,number_epoch=number_epoch,batch_size=batch_size,optimizer_name=optimizer_name, weight_decay=weight_decay, image_output_path=image_output_path, model_output_path=model_output_path, model_path="")
-    # loss = unet.train_unet()
+    unet = UnetTrain(root_dir=data_dir, is_transform = False, learning_rate=learning_rate,number_epoch=number_epoch,batch_size=batch_size,optimizer_name=optimizer_name, weight_decay=weight_decay, image_output_path=image_output_path, model_output_path=model_output_path, model_path="")
+    loss = unet.train_unet()
     
 
 
@@ -786,18 +787,18 @@ if __name__ == "__main__":
     # print("\nBest Hyperparameters:")
     # print(study.best_params)
 
-    data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/final_easy_dataset/original/train"
+    data_dir = "/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/dense_data/Original/train"
 # Best Hyperparameters:
 # {'batch_size': 2, 'learning_rate': 0.000983405046744849, 'number_epoch': 50, 'optimizer': 'sgd', 'weight_decay': 7.232961079009517e-05}
     model_path = ""
     learning_rate = 0.000983405046744849
-    number_epoch = 50
+    number_epoch = 70
     batch_size = 2
     optimizer_name = "sgd"
     weight_decay = 7.232961079009517e-05
     is_transform = False
-    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/Easy_finetune/deeplabv3_without_augmentation_Easy_model_1.pth"
-    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/Easy_finetune/deeplabv3_without_augmentation_Easy_model_1.png"
+    model_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/Easy_finetune/train_dense_deeplabv3_without_augmentation_E_70.pth"
+    image_output_path = f"/home/dhruv/Documents/DHRUV_SOLAR_ROOFTOP/solar_github/Solar_Rooftop_Detection/Solar_rooftop_Detection_indian_images/baselineModels/deeplabv3/Easy_finetune/train_dense_deeplabv3_without_augmentation_E_70.png"
     
     
     deeplabv3_model = deepLabV3(data_dir=data_dir, model_output_path=model_output_path, image_output_path=image_output_path, model_path="",num_epochs=number_epoch, batch_size=batch_size, learning_rate=learning_rate,  optimizer_name=optimizer_name, weight_decay=weight_decay, is_transform= False)

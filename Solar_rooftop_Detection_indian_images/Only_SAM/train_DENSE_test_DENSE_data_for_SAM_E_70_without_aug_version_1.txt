@@ -1,0 +1,27 @@
+
+
+==== Metrics Mean ====
+num_boxes                  126.000000
+pixel_iou                    0.856150
+pixel_dice                   0.922290
+pixel_accuracy               0.927100
+pixel_precision              0.896752
+pixel_recall                 0.950214
+region_iou                   0.856150
+region_dice                  0.922290
+region_precision             0.896752
+region_recall                0.950214
+region_success_accuracy      1.000000
+
+==== Metrics Std ====
+num_boxes                  45.587301
+pixel_iou                   0.025991
+pixel_dice                  0.015208
+pixel_accuracy              0.024382
+pixel_precision             0.028988
+pixel_recall                0.018423
+region_iou                  0.025991
+region_dice                 0.015208
+region_precision            0.028988
+region_recall               0.018423
+region_success_accuracy     0.000000
